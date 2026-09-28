@@ -1,38 +1,79 @@
 {
-  "titulo": "Painel Maranhão 2050 — Contribuições, Prioridades e Lacunas",
-  "geradoEm": "2026-09-21T13:27:03.653096Z",
-  "fonte": "Matriz_contribuicoes_entidades_Plano_Maranhao_2050_atualizada (3).xlsx",
+  "titulo": "Painel Maranhão 2050 — Revisão de Ativos e Passivos",
+  "geradoEm": "2026-09-25T20:41:05.358771Z",
+  "fonte": "Matriz_Maranhao2050.xlsx",
   "registros": {
+    "entidades": 12,
+    "desafios": 22,
+    "indicadores": 30,
     "rankingIntegrado": 210,
+    "rankingConsolidado": 39,
     "escutaTecnica": 37,
-    "sistemasDeReferencia": 25,
-    "evidenciasSefaz": 6
+    "propostaFinal": 29
   },
   "distribuicao": {
-    "porTipo": {
+    "rankingPorTipo": {
       "Ativo": 84,
       "Passivo": 44,
       "Proposta": 82
     },
-    "porArea": {
-      "Economia": 62,
-      "Educação, identidade e cultura": 30,
-      "Governança": 52,
-      "Meio ambiente": 37,
-      "Sociedade": 29
+    "consolidadoPorTipo": {
+      "Ativo": 17,
+      "Passivo": 22
     },
-    "porPrioridade": {
-      "Alta": 81,
-      "Em qualificação": 11,
-      "Muito alta": 1,
-      "Média": 117
+    "propostaFinalPorTipo": {
+      "Ativo": 12,
+      "Passivo": 17
+    },
+    "propostaFinalPorArea": {
+      "Economia Próspera e Inclusiva": 11,
+      "Educação, Identidade e Cultura Transformadoras e Estruturantes": 3,
+      "Governança Efetiva, Conectada e Inovadora": 4,
+      "Meio Ambiente Valorizado e Resiliente": 5,
+      "Sociedade Saudável, Segura e Justa": 6
     }
   },
   "metodologia": {
-    "adesaoDesafiosEMaturidade": 0.4,
-    "votacaoEscuta": 0.25,
-    "qualidadeDaInformacao": 0.2,
-    "factibilidadeFiscalOrientativa": 0.15,
-    "nota": "A referência da SEFAZ orienta a leitura fiscal por área. Não substitui orçamento, EVTEA ou análise setorial."
+    "criterios": [
+      {
+        "Critério": "Adesão aos desafios e maturidade de monitoramento",
+        "Peso": 0.4,
+        "Regra": "Aderência na matriz (50%), abrangência dos desafios relacionados (30%) e indicador/cobertura (20%)."
+      },
+      {
+        "Critério": "Votação e contribuição da escuta",
+        "Peso": 0.25,
+        "Regra": "Seleções entre 9 respostas convertidas para escala 0–5. Nova proposta do formulário, sem votação própria, recebe 1 ponto de participação."
+      },
+      {
+        "Critério": "Qualidade das informações",
+        "Peso": 0.2,
+        "Regra": "Rastreabilidade e consistência com o tipo: ativo com evidência de existência e potencial; passivo com diagnóstico ou indicador negativo; proposta com ação, resultado esperado e justificativa. A escuta sem documento comprobatório recebe pontuação intermediária."
+      },
+      {
+        "Critério": "Factibilidade fiscal orientativa",
+        "Peso": 0.15,
+        "Regra": "Referência da SEFAZ por área, ajustada para propostas sem custo estimado e temas intensivos em infraestrutura. Não substitui orçamento, EVTEA ou análise setorial."
+      }
+    ],
+    "consolidadoNota": "O consolidado utiliza o maior score final original do grupo como score-base; o cruzamento qualitativo altera seleção, agregação, redação e condicionamentos, sem criar nova pontuação.",
+    "nota": "A vinculação entre evidências, desafios e indicadores é analítica. A factibilidade fiscal é orientativa e não substitui orçamento, EVTEA ou análise setorial."
+  },
+  "rankingConsolidadoResumo": {
+    "ativosConsolidados": 17,
+    "passivosConsolidados": 22,
+    "gruposAgregados": 17,
+    "reclassificadosExcluidos": 47,
+    "registrosBase": 128,
+    "regraOrdenacao": "O consolidado utiliza o maior score final original do grupo como score-base; o cruzamento qualitativo altera seleção, agregação, redação e condicionamentos, sem criar nova pontuação."
+  },
+  "propostaFinalResumo": {
+    "ativos": 12,
+    "passivos": 17,
+    "total": 29,
+    "altaOuMuitoAlta": 22,
+    "prioridadeMedia": 7,
+    "base": "Proposta final pós-GT",
+    "nota": "Versão final após a rodada de trabalho do GT. A análise e os gráficos consideram os itens selecionados na aba Proposta Final."
   }
 }

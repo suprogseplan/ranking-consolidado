@@ -1,0 +1,203 @@
+{
+  "titulo": "Síntese da revisão de Ativos e Passivos — Plano Maranhão 2050",
+  "descricao": "Sistematização dos documentos recebidos, cobertura por Área de Resultado e metodologia utilizada até a Proposta Final.",
+  "entidades": [
+    {
+      "Entidade": "FAPEMA",
+      "Documentos": "1 documento: Relatório FAPEMA para Análise Situacional Plano Maranhão.",
+      "Educação, Identidade e Cultura Transformadoras e Estruturantes": "Coberta",
+      "Economia Próspera e Inclusiva": "Coberta",
+      "Meio Ambiente Valorizado e Resiliente": "Coberta",
+      "Sociedade Saudável, Segura e Justa": "Coberta",
+      "Governança Efetiva, Conectada e Inovadora": "Coberta"
+    },
+    {
+      "Entidade": "FIEMA",
+      "Documentos": "1 documento: Mapa Estratégico da Indústria do Maranhão 2025-2032 (CNI/FIEMA).",
+      "Educação, Identidade e Cultura Transformadoras e Estruturantes": "Coberta",
+      "Economia Próspera e Inclusiva": "Coberta",
+      "Meio Ambiente Valorizado e Resiliente": "Coberta",
+      "Sociedade Saudável, Segura e Justa": "Coberta",
+      "Governança Efetiva, Conectada e Inovadora": "Coberta"
+    },
+    {
+      "Entidade": "IPAM",
+      "Documentos": "3 documentos: Gestão do Fogo, painel IPAM e PPCDQ-MA (autoria SEMA/Casa Civil).",
+      "Educação, Identidade e Cultura Transformadoras e Estruturantes": "Coberta",
+      "Economia Próspera e Inclusiva": "Coberta",
+      "Meio Ambiente Valorizado e Resiliente": "Coberta",
+      "Sociedade Saudável, Segura e Justa": "Não coberta",
+      "Governança Efetiva, Conectada e Inovadora": "Coberta"
+    },
+    {
+      "Entidade": "MAPA",
+      "Documentos": "3 documentos: carteira MAPA 2026, cooperação/credenciamento e plano de regularização fundiária.",
+      "Educação, Identidade e Cultura Transformadoras e Estruturantes": "Coberta",
+      "Economia Próspera e Inclusiva": "Coberta",
+      "Meio Ambiente Valorizado e Resiliente": "Coberta",
+      "Sociedade Saudável, Segura e Justa": "Coberta",
+      "Governança Efetiva, Conectada e Inovadora": "Coberta"
+    },
+    {
+      "Entidade": "SEBRAE",
+      "Documentos": "Lote parcial com 9 conjuntos documentais: agro, ambiente de negócios, artesanato, turismo e inteligência de dados (217 perfis municipais).",
+      "Educação, Identidade e Cultura Transformadoras e Estruturantes": "Coberta",
+      "Economia Próspera e Inclusiva": "Coberta",
+      "Meio Ambiente Valorizado e Resiliente": "Coberta",
+      "Sociedade Saudável, Segura e Justa": "Coberta",
+      "Governança Efetiva, Conectada e Inovadora": "Coberta"
+    },
+    {
+      "Entidade": "SEINC",
+      "Documentos": "2 documentos: Economia do Mar e SEM São Luís digital maio 2026.",
+      "Educação, Identidade e Cultura Transformadoras e Estruturantes": "Coberta",
+      "Economia Próspera e Inclusiva": "Coberta",
+      "Meio Ambiente Valorizado e Resiliente": "Coberta",
+      "Sociedade Saudável, Segura e Justa": "Coberta",
+      "Governança Efetiva, Conectada e Inovadora": "Coberta"
+    },
+    {
+      "Entidade": "EGMA",
+      "Documentos": "4 documentos: relatórios de gestão 2023, 2024 e 2025; Resumo de Ações Institucionais.",
+      "Educação, Identidade e Cultura Transformadoras e Estruturantes": "Coberta",
+      "Economia Próspera e Inclusiva": "Coberta",
+      "Meio Ambiente Valorizado e Resiliente": "Coberta",
+      "Sociedade Saudável, Segura e Justa": "Coberta",
+      "Governança Efetiva, Conectada e Inovadora": "Coberta"
+    },
+    {
+      "Entidade": "SEMAG",
+      "Documentos": "1 documento: Relatório de Atividades da SEMAG/SECID, seções 1 e 2 (Maranhão Livre da Fome e Monitora).",
+      "Educação, Identidade e Cultura Transformadoras e Estruturantes": "Coberta",
+      "Economia Próspera e Inclusiva": "Não coberta",
+      "Meio Ambiente Valorizado e Resiliente": "Não coberta",
+      "Sociedade Saudável, Segura e Justa": "Coberta",
+      "Governança Efetiva, Conectada e Inovadora": "Coberta"
+    },
+    {
+      "Entidade": "IMESC",
+      "Documentos": "21 documentos únicos: boletins sociais, estudos de educação e saúde, análises econômicas, estudos ambientais e cidades inteligentes. Cinco duplicatas foram desconsideradas.",
+      "Educação, Identidade e Cultura Transformadoras e Estruturantes": "Coberta",
+      "Economia Próspera e Inclusiva": "Coberta",
+      "Meio Ambiente Valorizado e Resiliente": "Coberta",
+      "Sociedade Saudável, Segura e Justa": "Coberta",
+      "Governança Efetiva, Conectada e Inovadora": "Coberta"
+    },
+    {
+      "Entidade": "INVESTE MA",
+      "Documentos": "1 documento: Ofício nº 242/2026-GAB/INVESTE, com subsídios sobre logística, investimento, industrialização, desenvolvimento regional e governança.",
+      "Educação, Identidade e Cultura Transformadoras e Estruturantes": "Não coberta",
+      "Economia Próspera e Inclusiva": "Coberta",
+      "Meio Ambiente Valorizado e Resiliente": "Em complementação",
+      "Sociedade Saudável, Segura e Justa": "Não coberta",
+      "Governança Efetiva, Conectada e Inovadora": "Coberta"
+    },
+    {
+      "Entidade": "SAGRIMA",
+      "Documentos": "1 documento: contribuição técnica da SAGRIMA/SUPDER sobre Bioeconomia do Mar, Aquicultura, Pesca e Transição Energética (14 set. 2026).",
+      "Educação, Identidade e Cultura Transformadoras e Estruturantes": "Coberta",
+      "Economia Próspera e Inclusiva": "Coberta",
+      "Meio Ambiente Valorizado e Resiliente": "Coberta",
+      "Sociedade Saudável, Segura e Justa": "Coberta",
+      "Governança Efetiva, Conectada e Inovadora": "Coberta"
+    },
+    {
+      "Entidade": "SEFAZ",
+      "Documentos": "3 documentos: Anexo de Metas Fiscais (renúncia), série de arrecadação 2014–2025 (NEEF) e arrecadação por código até jul. de 2026.",
+      "Educação, Identidade e Cultura Transformadoras e Estruturantes": "Não coberta",
+      "Economia Próspera e Inclusiva": "Coberta",
+      "Meio Ambiente Valorizado e Resiliente": "Coberta",
+      "Sociedade Saudável, Segura e Justa": "Coberta",
+      "Governança Efetiva, Conectada e Inovadora": "Coberta"
+    }
+  ],
+  "classificacoes": [
+    {
+      "Tipo": "Ativo estratégico",
+      "Definição": "Recurso natural, ativo territorial ou competência/capacidade construída no Maranhão, duradoura e estruturante, com forte potencial de contribuir decisivamente para o desenvolvimento sustentável nas próximas décadas, se bem aproveitado. Deve ser sustentado por evidência de existência, duração e relevância."
+    },
+    {
+      "Tipo": "Passivo estratégico",
+      "Definição": "Fragilidade, gargalo, desigualdade, pressão ou risco estrutural que precisa ser enfrentado no planejamento de longo prazo, pois pode comprometer o futuro do estado se persistir. Deve ser sustentado por diagnóstico e, quando disponível, indicador negativo, fonte oficial e comparação Maranhão–Nordeste–Brasil."
+    },
+    {
+      "Tipo": "Proposta",
+      "Definição": "Tema, ideia, projeto, iniciativa, diretriz ou recomendação apresentada para criar, ampliar, organizar ou orientar uma ação. Expressa um caminho de ação e não descreve necessariamente uma vantagem ou fragilidade já existente. Quando possível, deve informar resultado esperado, público ou território e evidência que a justifica."
+    },
+    {
+      "Tipo": "Lacuna de cobertura",
+      "Definição": "Ausência de evidência temática direta no conjunto documental da entidade. Não equivale, por si só, a um passivo estratégico."
+    },
+    {
+      "Tipo": "Regra de enquadramento",
+      "Definição": "Classificar pela natureza predominante do item: condição positiva existente (Ativo), condição negativa existente (Passivo), ação sugerida (Proposta) ou ausência de evidência (Lacuna). A classificação não altera automaticamente score, aderência, votação ou factibilidade."
+    }
+  ],
+  "notaMetodologica": "A classificação dos tipos registra a natureza da contribuição e não altera, por si só, a pontuação do ranking. A vinculação entre evidências, desafios e indicadores é analítica. Atualizações: SEBRAE; EGMA; SEMAG; IMESC; INVESTE MA; SAGRIMA (contribuição técnica da SAGRIMA/SUPDER, 14 set. 2026); e SEFAZ (3 bases fiscais); e Escuta Técnica das Câmaras (9 respostas válidas).",
+  "fases": [
+    {
+      "fase": 1,
+      "titulo": "Recebimento e sistematização documental",
+      "descricao": "Organização das contribuições institucionais e verificação da cobertura temática nas cinco Áreas de Resultado.",
+      "base": "12 entidades com documentação sistematizada."
+    },
+    {
+      "fase": 2,
+      "titulo": "Classificação das contribuições",
+      "descricao": "Enquadramento dos registros como Ativo estratégico, Passivo estratégico, Proposta ou Lacuna de cobertura.",
+      "base": "Critérios operacionais registrados na aba Síntese."
+    },
+    {
+      "fase": 3,
+      "titulo": "Vinculação ao universo lógico do Plano",
+      "descricao": "Associação analítica das evidências às Áreas de Resultado, aos 22 Desafios Estratégicos e aos indicadores de apoio e monitoramento.",
+      "base": "22 desafios e 30 indicadores de monitoramento."
+    },
+    {
+      "fase": 4,
+      "titulo": "Escuta Técnica das Câmaras",
+      "descricao": "Priorização participativa dos itens predefinidos e registro de novas contribuições e observações das Câmaras Técnicas.",
+      "base": "9 respostas válidas; frequência de seleção e avaliações de potencial/gravidade e urgência."
+    },
+    {
+      "fase": 5,
+      "titulo": "Ranking Integrado",
+      "descricao": "Integração das evidências documentais, aderência ao Plano, contribuição da escuta, qualidade da informação e factibilidade fiscal orientativa.",
+      "base": "210 registros rankeados com score de 0 a 100."
+    },
+    {
+      "fase": 6,
+      "titulo": "Consolidação qualitativa",
+      "descricao": "Agrupamento de itens convergentes, reclassificações, reformulação de textos e preservação da rastreabilidade das evidências de origem.",
+      "base": "39 itens consolidados."
+    },
+    {
+      "fase": 7,
+      "titulo": "Proposta Final pós-GT",
+      "descricao": "Seleção final após a rodada de trabalho do GT, incorporando os ajustes qualitativos e as decisões consolidadas na etapa final.",
+      "base": "29 itens finais: 12 ativos e 17 passivos."
+    }
+  ],
+  "criteriosRanking": [
+    {
+      "Critério": "Adesão aos desafios e maturidade de monitoramento",
+      "Peso": 0.4,
+      "Regra": "Aderência na matriz (50%), abrangência dos desafios relacionados (30%) e indicador/cobertura (20%)."
+    },
+    {
+      "Critério": "Votação e contribuição da escuta",
+      "Peso": 0.25,
+      "Regra": "Seleções entre 9 respostas convertidas para escala 0–5. Nova proposta do formulário, sem votação própria, recebe 1 ponto de participação."
+    },
+    {
+      "Critério": "Qualidade das informações",
+      "Peso": 0.2,
+      "Regra": "Rastreabilidade e consistência com o tipo: ativo com evidência de existência e potencial; passivo com diagnóstico ou indicador negativo; proposta com ação, resultado esperado e justificativa. A escuta sem documento comprobatório recebe pontuação intermediária."
+    },
+    {
+      "Critério": "Factibilidade fiscal orientativa",
+      "Peso": 0.15,
+      "Regra": "Referência da SEFAZ por área, ajustada para propostas sem custo estimado e temas intensivos em infraestrutura. Não substitui orçamento, EVTEA ou análise setorial."
+    }
+  ]
+}

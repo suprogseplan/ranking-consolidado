@@ -1,0 +1,370 @@
+{
+  "desafios": [
+    {
+      "Nº": 1,
+      "Área de resultado": "Educação, Identidade e Cultura Transformadoras e Estruturantes",
+      "Desafio estratégico": "Ampliar o acesso ao ensino e garantir infraestrutura adequada em todo o estado",
+      "Indicador principal de apoio": "Infraestrutura Adequada",
+      "Fonte": "Produto 2.2.2, p. 17"
+    },
+    {
+      "Nº": 2,
+      "Área de resultado": "Educação, Identidade e Cultura Transformadoras e Estruturantes",
+      "Desafio estratégico": "Alavancar a qualidade e o desempenho escolar entre crianças, jovens e adultos",
+      "Indicador principal de apoio": "IDEB, por etapa de ensino",
+      "Fonte": "Produto 2.2.2, p. 17"
+    },
+    {
+      "Nº": 3,
+      "Área de resultado": "Educação, Identidade e Cultura Transformadoras e Estruturantes",
+      "Desafio estratégico": "Ampliar a oferta do ensino superior e profissionalizante e promover aprendizagem inovadora e pesquisa científica e tecnológica conectada com vocações regionais",
+      "Indicador principal de apoio": "Matrículas do Ensino Médio que são do Ensino Profissionalizante",
+      "Fonte": "Produto 2.2.2, p. 17"
+    },
+    {
+      "Nº": 4,
+      "Área de resultado": "Educação, Identidade e Cultura Transformadoras e Estruturantes",
+      "Desafio estratégico": "Garantir o reconhecimento e a centralidade das pautas de diversidade e dos povos e comunidades tradicionais",
+      "Indicador principal de apoio": "Matrículas na Educação Indígena, por etapa de ensino",
+      "Fonte": "Produto 2.2.2, p. 17"
+    },
+    {
+      "Nº": 5,
+      "Área de resultado": "Educação, Identidade e Cultura Transformadoras e Estruturantes",
+      "Desafio estratégico": "Promover maior visibilidade para a cultura produzida pelo povo maranhense em suas mais diversas expressões",
+      "Indicador principal de apoio": "Despesas com difusão cultural",
+      "Fonte": "Produto 2.2.2, p. 17"
+    },
+    {
+      "Nº": 6,
+      "Área de resultado": "Economia Próspera e Inclusiva",
+      "Desafio estratégico": "Integrar a cadeia logística, expandir e melhorar a infraestrutura",
+      "Indicador principal de apoio": "Classificação das rodovias",
+      "Fonte": "Produto 2.2.2, p. 17"
+    },
+    {
+      "Nº": 7,
+      "Área de resultado": "Economia Próspera e Inclusiva",
+      "Desafio estratégico": "Ampliar o acesso e reduzir disparidades do mercado de trabalho",
+      "Indicador principal de apoio": "Ocupados informais",
+      "Fonte": "Produto 2.2.2, p. 17"
+    },
+    {
+      "Nº": 8,
+      "Área de resultado": "Economia Próspera e Inclusiva",
+      "Desafio estratégico": "Elevar o valor agregado da produção e promover maior diversificação produtiva",
+      "Indicador principal de apoio": "Índice de Complexidade Econômica",
+      "Fonte": "Produto 2.2.2, p. 17"
+    },
+    {
+      "Nº": 9,
+      "Área de resultado": "Economia Próspera e Inclusiva",
+      "Desafio estratégico": "Aumentar a atratividade do ambiente de negócios e a capacidade de inovação",
+      "Indicador principal de apoio": "Tempo médio de abertura de empresas",
+      "Fonte": "Produto 2.2.2, p. 17"
+    },
+    {
+      "Nº": 10,
+      "Área de resultado": "Economia Próspera e Inclusiva",
+      "Desafio estratégico": "Reduzir a desigualdade regional e a concentração espacial da produção",
+      "Indicador principal de apoio": "Participação do PIB",
+      "Fonte": "Produto 2.2.2, p. 17"
+    },
+    {
+      "Nº": 11,
+      "Área de resultado": "Meio Ambiente Valorizado e Resiliente",
+      "Desafio estratégico": "Reduzir os índices de desmatamento e queimadas e aumentar a proteção e recuperação dos biomas",
+      "Indicador principal de apoio": "Supressão Vegetal Legal e Ilegal",
+      "Fonte": "Produto 2.2.2, p. 17"
+    },
+    {
+      "Nº": 12,
+      "Área de resultado": "Meio Ambiente Valorizado e Resiliente",
+      "Desafio estratégico": "Estruturar a gestão dos recursos naturais e mitigar impactos decorrentes das mudanças climáticas",
+      "Indicador principal de apoio": "Domicílios com saneamento adequado",
+      "Fonte": "Produto 2.2.2, p. 17"
+    },
+    {
+      "Nº": 13,
+      "Área de resultado": "Meio Ambiente Valorizado e Resiliente",
+      "Desafio estratégico": "Melhorar a gestão territorial e estimular o intercâmbio de saberes populares e tradicionais",
+      "Indicador principal de apoio": "Sem indicador definido na nova lista",
+      "Fonte": "Produto 2.2.2, p. 17"
+    },
+    {
+      "Nº": 14,
+      "Área de resultado": "Meio Ambiente Valorizado e Resiliente",
+      "Desafio estratégico": "Potencializar o desenvolvimento da economia verde e transversalizar a educação ambiental",
+      "Indicador principal de apoio": "Proporção de vínculos ligados ao emprego verde sobre o total de emprego formal",
+      "Fonte": "Produto 2.2.2, p. 17"
+    },
+    {
+      "Nº": 15,
+      "Área de resultado": "Sociedade Saudável, Segura e Justa",
+      "Desafio estratégico": "Reduzir a desigualdade no acesso a direitos fundamentais, pobreza e escassez de oportunidades",
+      "Indicador principal de apoio": "População em situação de pobreza (rdpc até US$ 6,85/dia)",
+      "Fonte": "Produto 2.2.2, p. 17"
+    },
+    {
+      "Nº": 16,
+      "Área de resultado": "Sociedade Saudável, Segura e Justa",
+      "Desafio estratégico": "Assegurar o pleno desenvolvimento da infância e da juventude",
+      "Indicador principal de apoio": "Percentual de matrículas de creche em relação à população de 0 a 3 anos",
+      "Fonte": "Produto 2.2.2, p. 17"
+    },
+    {
+      "Nº": 17,
+      "Área de resultado": "Sociedade Saudável, Segura e Justa",
+      "Desafio estratégico": "Ampliar o acesso e melhorar a qualidade dos serviços de saúde",
+      "Indicador principal de apoio": "Cobertura Estratégia Saúde da Família (%)",
+      "Fonte": "Produto 2.2.2, p. 17"
+    },
+    {
+      "Nº": 18,
+      "Área de resultado": "Sociedade Saudável, Segura e Justa",
+      "Desafio estratégico": "Reduzir a violência e criminalidade no campo e na cidade",
+      "Indicador principal de apoio": "Taxa de Crimes Violentos Letais Intencionais (CVLI), por 100 mil habitantes",
+      "Fonte": "Produto 2.2.2, p. 17"
+    },
+    {
+      "Nº": 19,
+      "Área de resultado": "Governança Efetiva, Conectada e Inovadora",
+      "Desafio estratégico": "Institucionalizar e aumentar a profissionalização da gestão pública",
+      "Indicador principal de apoio": "Proporção de empregados do setor público com ensino superior",
+      "Fonte": "Produto 2.2.2, p. 17"
+    },
+    {
+      "Nº": 20,
+      "Área de resultado": "Governança Efetiva, Conectada e Inovadora",
+      "Desafio estratégico": "Fortalecer a governança compartilhada e as redes de cooperação",
+      "Indicador principal de apoio": "Índice de transparência",
+      "Fonte": "Produto 2.2.2, p. 17"
+    },
+    {
+      "Nº": 21,
+      "Área de resultado": "Governança Efetiva, Conectada e Inovadora",
+      "Desafio estratégico": "Estimular a capacidade de inovação e a utilização de recursos digitais",
+      "Indicador principal de apoio": "Índice de transformação digital",
+      "Fonte": "Produto 2.2.2, p. 17"
+    },
+    {
+      "Nº": 22,
+      "Área de resultado": "Governança Efetiva, Conectada e Inovadora",
+      "Desafio estratégico": "Elevar a autonomia fiscal e a captação de recursos",
+      "Indicador principal de apoio": "CAPAG",
+      "Fonte": "Produto 2.2.2, p. 17"
+    }
+  ],
+  "indicadores": [
+    {
+      "Área de resultado": "Educação, Identidade e Cultura Transformadoras e Estruturantes",
+      "Indicador": "Matrículas no ensino médio profissionalizante",
+      "Último valor disponível": "16,2%",
+      "Ano": 2024,
+      "Uso na matriz": "Oferta de educação profissional"
+    },
+    {
+      "Área de resultado": "Educação, Identidade e Cultura Transformadoras e Estruturantes",
+      "Indicador": "Abandono no ensino médio",
+      "Último valor disponível": "3,4%",
+      "Ano": 2024,
+      "Uso na matriz": "Permanência escolar"
+    },
+    {
+      "Área de resultado": "Educação, Identidade e Cultura Transformadoras e Estruturantes",
+      "Indicador": "Distorção idade-série no ensino médio",
+      "Último valor disponível": "23,2%",
+      "Ano": 2024,
+      "Uso na matriz": "Fluxo e desempenho escolar"
+    },
+    {
+      "Área de resultado": "Economia Próspera e Inclusiva",
+      "Indicador": "Rendimento médio real do trabalho",
+      "Último valor disponível": "R$ 1.992",
+      "Ano": 2024,
+      "Uso na matriz": "Qualidade do trabalho e renda"
+    },
+    {
+      "Área de resultado": "Economia Próspera e Inclusiva",
+      "Indicador": "Taxa de informalidade",
+      "Último valor disponível": "55,3%",
+      "Ano": 2024,
+      "Uso na matriz": "Inserção no mercado de trabalho"
+    },
+    {
+      "Área de resultado": "Economia Próspera e Inclusiva",
+      "Indicador": "PEA com nível superior",
+      "Último valor disponível": "16,4%",
+      "Ano": 2024,
+      "Uso na matriz": "Qualificação da força de trabalho"
+    },
+    {
+      "Área de resultado": "Economia Próspera e Inclusiva",
+      "Indicador": "Rodovias avaliadas como ótimas ou boas",
+      "Último valor disponível": "19,42%",
+      "Ano": 2024,
+      "Uso na matriz": "Infraestrutura logística"
+    },
+    {
+      "Área de resultado": "Economia Próspera e Inclusiva",
+      "Indicador": "PIB estadual",
+      "Último valor disponível": "R$ 149,2 bilhões",
+      "Ano": 2023,
+      "Uso na matriz": "Escala da atividade econômica"
+    },
+    {
+      "Área de resultado": "Meio Ambiente Valorizado e Resiliente",
+      "Indicador": "Taxa de desmatamento",
+      "Último valor disponível": "3.714 km²",
+      "Ano": 2024,
+      "Uso na matriz": "Proteção dos biomas"
+    },
+    {
+      "Área de resultado": "Meio Ambiente Valorizado e Resiliente",
+      "Indicador": "Emissões de CO₂ per capita",
+      "Último valor disponível": "25,57 t",
+      "Ano": 2023,
+      "Uso na matriz": "Mudanças climáticas"
+    },
+    {
+      "Área de resultado": "Meio Ambiente Valorizado e Resiliente",
+      "Indicador": "Participação de fontes renováveis",
+      "Último valor disponível": "59,0%",
+      "Ano": 2023,
+      "Uso na matriz": "Transição energética"
+    },
+    {
+      "Área de resultado": "Meio Ambiente Valorizado e Resiliente",
+      "Indicador": "Saneamento adequado",
+      "Último valor disponível": "25,9%",
+      "Ano": 2024,
+      "Uso na matriz": "Gestão ambiental e qualidade de vida"
+    },
+    {
+      "Área de resultado": "Sociedade Saudável, Segura e Justa",
+      "Indicador": "Pobreza monetária",
+      "Último valor disponível": "45,8%",
+      "Ano": 2024,
+      "Uso na matriz": "Redução de desigualdades"
+    },
+    {
+      "Área de resultado": "Sociedade Saudável, Segura e Justa",
+      "Indicador": "Extrema pobreza",
+      "Último valor disponível": "10,2%",
+      "Ano": 2024,
+      "Uso na matriz": "Redução de desigualdades"
+    },
+    {
+      "Área de resultado": "Sociedade Saudável, Segura e Justa",
+      "Indicador": "Segurança alimentar",
+      "Último valor disponível": "35,2%",
+      "Ano": 2024,
+      "Uso na matriz": "Acesso regular a alimentos"
+    },
+    {
+      "Área de resultado": "Sociedade Saudável, Segura e Justa",
+      "Indicador": "Insegurança alimentar grave",
+      "Último valor disponível": "5,0%",
+      "Ano": 2025,
+      "Uso na matriz": "Privação alimentar severa"
+    },
+    {
+      "Área de resultado": "Sociedade Saudável, Segura e Justa",
+      "Indicador": "Cobertura de atenção primária em saúde",
+      "Último valor disponível": "136,79%",
+      "Ano": 2025,
+      "Uso na matriz": "Acesso à saúde"
+    },
+    {
+      "Área de resultado": "Sociedade Saudável, Segura e Justa",
+      "Indicador": "Taxa de homicídios",
+      "Último valor disponível": "28,7 por 100 mil hab.",
+      "Ano": 2023,
+      "Uso na matriz": "Segurança pública"
+    },
+    {
+      "Área de resultado": "Sociedade Saudável, Segura e Justa",
+      "Indicador": "Taxa de roubos",
+      "Último valor disponível": "457,2 por 100 mil hab.",
+      "Ano": 2024,
+      "Uso na matriz": "Segurança pública"
+    },
+    {
+      "Área de resultado": "Sociedade Saudável, Segura e Justa",
+      "Indicador": "Pessoas privadas de liberdade sem condenação",
+      "Último valor disponível": "32,4%",
+      "Ano": 2024,
+      "Uso na matriz": "Justiça e direitos"
+    },
+    {
+      "Área de resultado": "Sociedade Saudável, Segura e Justa",
+      "Indicador": "Moradia inadequada",
+      "Último valor disponível": "19,9%",
+      "Ano": 2024,
+      "Uso na matriz": "Condições de vida"
+    },
+    {
+      "Área de resultado": "Governança Efetiva, Conectada e Inovadora",
+      "Indicador": "CAPAG",
+      "Último valor disponível": "A",
+      "Ano": 2025,
+      "Uso na matriz": "Capacidade de pagamento e gestão fiscal"
+    },
+    {
+      "Área de resultado": "Governança Efetiva, Conectada e Inovadora",
+      "Indicador": "Resultado primário / RCL",
+      "Último valor disponível": "2,15%",
+      "Ano": 2024,
+      "Uso na matriz": "Equilíbrio fiscal"
+    },
+    {
+      "Área de resultado": "Governança Efetiva, Conectada e Inovadora",
+      "Indicador": "Poupança corrente",
+      "Último valor disponível": "19,59%",
+      "Ano": 2024,
+      "Uso na matriz": "Capacidade de investimento"
+    },
+    {
+      "Área de resultado": "Governança Efetiva, Conectada e Inovadora",
+      "Indicador": "Despesa com pessoal / RCL",
+      "Último valor disponível": "44,70%",
+      "Ano": 2024,
+      "Uso na matriz": "Sustentabilidade fiscal"
+    },
+    {
+      "Área de resultado": "Governança Efetiva, Conectada e Inovadora",
+      "Indicador": "Investimentos / RCL",
+      "Último valor disponível": "9,74%",
+      "Ano": 2024,
+      "Uso na matriz": "Capacidade de execução de investimentos"
+    },
+    {
+      "Área de resultado": "Governança Efetiva, Conectada e Inovadora",
+      "Indicador": "Índice de transformação digital",
+      "Último valor disponível": "82",
+      "Ano": 2025,
+      "Uso na matriz": "Maturidade digital"
+    },
+    {
+      "Área de resultado": "Governança Efetiva, Conectada e Inovadora",
+      "Indicador": "Índice de transparência pública",
+      "Último valor disponível": "69,31%",
+      "Ano": 2024,
+      "Uso na matriz": "Abertura e controle social"
+    },
+    {
+      "Área de resultado": "Governança Efetiva, Conectada e Inovadora",
+      "Indicador": "Índice de serviços digitais do portal",
+      "Último valor disponível": "95,37%",
+      "Ano": 2024,
+      "Uso na matriz": "Serviços públicos digitais"
+    },
+    {
+      "Área de resultado": "Governança Efetiva, Conectada e Inovadora",
+      "Indicador": "Cobertura de backhaul de fibra óptica",
+      "Último valor disponível": "82,1%",
+      "Ano": 2025,
+      "Uso na matriz": "Conectividade estadual"
+    }
+  ]
+}

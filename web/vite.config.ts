@@ -1,8 +1,8 @@
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
-// https://vite.dev/config/
+// Publicação institucional: https://suprogseplan.github.io/ranking-consolidado/
 export default defineConfig({
   plugins: [react()],
-  base: process.env.GITHUB_ACTIONS ? '/maranhao2050-painel/' : '/',
+  base: process.env.GITHUB_ACTIONS ? '/ranking-consolidado/' : '/',
 })
