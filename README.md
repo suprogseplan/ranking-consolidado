@@ -18,7 +18,7 @@ O Excel continua sendo a fonte oficial e auditável. O painel apenas mostra a ve
 
 O script foi validado com a matriz que contém 211 registros no ranking integrado, 37 registros de escuta, 25 sistemas de referência de lacunas e 6 evidências SEFAZ.
 
-A aba **Ranking Consolidado** apresenta a lista final requalificada pelo Grupo de Trabalho: 30 itens, sendo 12 ativos estratégicos e 18 passivos críticos. O passivo anteriormente agregado sobre pressões urbanas, ocupação irregular e degradação de biomas foi desmembrado em dois registros: um de pressão urbana e saneamento insuficiente e outro de degradação de biomas e perda de serviços ecossistêmicos. Ela integra a leitura executiva, a distribuição por área de resultado, os destaques visuais e a base de rastreabilidade da escuta técnica.
+A aba **Ranking Consolidado**, que abre o painel, apresenta a lista final requalificada pelo Grupo de Trabalho: 30 itens, sendo 12 ativos estratégicos e 18 passivos críticos. A numeração visível é exclusiva da lista final; a posição de referência permanece disponível em cada evidência para preservar a rastreabilidade. O passivo anteriormente agregado sobre pressões urbanas, ocupação irregular e degradação de biomas foi desmembrado em dois registros: um de pressão urbana e saneamento insuficiente e outro de degradação de biomas e perda de serviços ecossistêmicos. Ela integra a leitura executiva, a distribuição por área de resultado, os destaques visuais e a base de rastreabilidade da escuta técnica.
 
 ## 2. Antes de começar
 

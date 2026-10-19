@@ -81,7 +81,7 @@ const AREAS: AreaConfig[] = [
   },
 ]
 
-const VISOES: Visao[] = ['Resumo', 'Ranking', 'Ranking Consolidado', 'Lacunas', 'Método']
+const VISOES: Visao[] = ['Ranking Consolidado', 'Resumo', 'Ranking', 'Lacunas', 'Método']
 
 function texto(valor: unknown) {
   return String(valor ?? '').trim()
@@ -118,6 +118,14 @@ function nomeArea(valor: unknown) {
 
 function corArea(valor: unknown) {
   return configArea(valor).cor
+}
+
+function chaveArea(valor: unknown) {
+  return configArea(valor).chave
+}
+
+function correspondeArea(valor: unknown, filtro: string) {
+  return filtro === 'Todas' || chaveArea(valor) === filtro
 }
 
 function percentual(parte: number, total: number) {
@@ -342,6 +350,7 @@ function TabelaRanking({
   aoOrdenar,
   rotuloScore = 'Score',
   mostrarConvergenciaDeEvidencias = false,
+  numeracaoSequencial = false,
 }: {
   registros: Registro[]
   campoOrdenacao?: CampoOrdenacao
@@ -349,6 +358,7 @@ function TabelaRanking({
   aoOrdenar?: (campo: CampoOrdenacao) => void
   rotuloScore?: string
   mostrarConvergenciaDeEvidencias?: boolean
+  numeracaoSequencial?: boolean
 }) {
   function cabecalho(rotulo: string, campo: CampoOrdenacao) {
     if (!aoOrdenar) return <th>{rotulo}</th>
@@ -380,7 +390,7 @@ function TabelaRanking({
       <table>
         <thead>
           <tr>
-            {cabecalho('Pos.', 'Posição')}
+            {cabecalho(numeracaoSequencial ? 'Nº' : 'Pos.', 'Posição')}
             {cabecalho('Tema / ativo / passivo', 'Tema, ativo ou passivo')}
             {cabecalho('Área de Resultado', 'Área de resultado')}
             {cabecalho('Tipo', 'Tipo')}
@@ -391,13 +401,16 @@ function TabelaRanking({
           </tr>
         </thead>
         <tbody>
-          {registros.map((registro) => (
+          {registros.map((registro, indice) => (
             <tr key={`${texto(registro['Posição'])}-${texto(registro['Tema, ativo ou passivo'])}`}>
-              <td className="posicao">{texto(registro['Posição'])}</td>
+              <td className="posicao">{numeracaoSequencial ? indice + 1 : texto(registro['Posição'])}</td>
               <td className="tema">
                 <strong>{texto(registro['Tema, ativo ou passivo'])}</strong>
                 <details>
                   <summary>Ver evidência e vínculo</summary>
+                  {numeracaoSequencial && (
+                    <p><b>Posição de referência:</b> {texto(registro['Posição']) || 'Não informado'}</p>
+                  )}
                   <p><b>Desafio:</b> {texto(registro['Desafio(s) do Plano']) || 'Não informado'}</p>
                   <p><b>Indicador:</b> {texto(registro['Indicador do Plano associado']) || 'Não informado'}</p>
                   <p><b>Fonte:</b> {texto(registro['Fonte e localização']) || 'Não informado'}</p>
@@ -575,7 +588,7 @@ function MapaDestaques({
             <div>
               <strong>{texto(registro['Tema, ativo ou passivo'])}</strong>
               <small>
-                {configArea(registro['Área de resultado']).nomeCurto}
+                {configArea(registro['Área de resultado']).nome}
                 {' · Score-base '}{numero(registro['Score final (0–100)']).toFixed(1)}
               </small>
             </div>
@@ -594,7 +607,7 @@ function App() {
   const [escuta, setEscuta] = useState<Registro[]>([])
   const [lacunas, setLacunas] = useState<Registro[]>([])
   const [metadados, setMetadados] = useState<Metadados | null>(null)
-  const [visao, setVisao] = useState<Visao>('Resumo')
+  const [visao, setVisao] = useState<Visao>('Ranking Consolidado')
   const [area, setArea] = useState('Todas')
   const [tipo, setTipo] = useState('Todos')
   const [origem, setOrigem] = useState('Todas')
@@ -624,9 +637,9 @@ function App() {
   }, [])
 
   const areas = useMemo(
-    () => Array.from(new Set(ranking.map((registro) => texto(registro['Área de resultado']))))
-      .filter(Boolean)
-      .sort((a, b) => configArea(a).ordem - configArea(b).ordem),
+    () => AREAS.filter((config) => ranking.some((registro) =>
+      chaveArea(registro['Área de resultado']) === config.chave,
+    )),
     [ranking],
   )
 
@@ -641,7 +654,7 @@ function App() {
   )
 
   const filtrados = useMemo(() => ranking
-    .filter((registro) => area === 'Todas' || texto(registro['Área de resultado']) === area)
+    .filter((registro) => correspondeArea(registro['Área de resultado'], area))
     .filter((registro) => tipo === 'Todos' || texto(registro.Tipo) === tipo)
     .filter((registro) => origem === 'Todas' || texto(registro.Origem) === origem)
     .filter((registro) => texto(registro['Tema, ativo ou passivo']).toLocaleLowerCase('pt-BR').includes(busca.toLocaleLowerCase('pt-BR')))
@@ -665,11 +678,15 @@ function App() {
   const rankingPaginado = rankingOrdenado.slice(inicioPagina, fimPagina)
   const paginasRanking = paginasVisiveis(paginaAtual, totalPaginasRanking)
 
-  const porArea = contar(filtrados, 'Área de resultado')
+  const porArea = filtrados.reduce<Record<string, number>>((acumulado, registro) => {
+    const nome = nomeArea(registro['Área de resultado'])
+    acumulado[nome] = (acumulado[nome] ?? 0) + 1
+    return acumulado
+  }, {})
   const porTipo = contar(filtrados, 'Tipo')
 
   const consolidadoFiltrado = useMemo(() => consolidadoQualitativo
-    .filter((registro) => area === 'Todas' || texto(registro['Área de resultado']) === area)
+    .filter((registro) => correspondeArea(registro['Área de resultado'], area))
     .filter((registro) => tipo === 'Todos' || texto(registro.Tipo) === tipo)
     .filter((registro) => origem === 'Todas' || texto(registro.Origem).includes(origem))
     .filter((registro) => normalizar(texto(registro['Tema, ativo ou passivo'])).includes(normalizar(busca)))
@@ -730,7 +747,7 @@ function App() {
   )
 
   const escutaFiltrada = useMemo(() => escuta
-    .filter((registro) => area === 'Todas' || texto(registro['Área de resultado']) === area)
+    .filter((registro) => correspondeArea(registro['Área de resultado'], area))
     .filter((registro) => tipo === 'Todos' || texto(registro.Tipo) === tipo)
     .filter((registro) => texto(registro['Tema, ativo ou passivo identificado']).toLocaleLowerCase('pt-BR').includes(busca.toLocaleLowerCase('pt-BR')))
     .filter((registro) => selecoesDaEscuta(registro) > 0)
@@ -789,8 +806,8 @@ function App() {
     },
     yAxis: {
       type: 'category',
-      data: dadosArea.map((chave) => configArea(chave).nomeCurto),
-      axisLabel: { width: 150, overflow: 'break', lineHeight: 15 },
+      data: dadosArea.map((chave) => configArea(chave).nome),
+      axisLabel: { width: 190, overflow: 'break', lineHeight: 15 },
     },
     series: [{
       type: 'bar',
@@ -925,6 +942,12 @@ function App() {
 
   const dataGeracao = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium' }).format(new Date(metadados.geradoEm))
   const registrosDaVisao = visao === 'Ranking Consolidado' ? consolidadoQualitativo : ranking
+  const seloCabecalho = visao === 'Ranking Consolidado'
+    ? consolidadoQualitativo.length
+    : metadados.registros.rankingIntegrado
+  const rotuloSeloCabecalho = visao === 'Ranking Consolidado'
+    ? 'itens finais do GT'
+    : 'registros integrados'
 
   return (
     <main className="painel">
@@ -952,8 +975,8 @@ function App() {
                 alt="Identidade visual do Plano Estratégico de Longo Prazo Maranhão 2050"
               />
             </figure>
-            <strong className="selo-base">{metadados.registros.rankingIntegrado}</strong>
-            <span className="selo-legenda">registros integrados</span>
+            <strong className="selo-base">{seloCabecalho}</strong>
+            <span className="selo-legenda">{rotuloSeloCabecalho}</span>
           </div>
         </div>
 
@@ -979,22 +1002,21 @@ function App() {
       </nav>
 
       <section className="areas-resultado" aria-label="Áreas de Resultado do Plano Maranhão 2050">
-        {areas.map((item) => {
-          const config = configArea(item)
-          const selecionada = area === item
+        {areas.map((config) => {
+          const selecionada = area === config.chave
           return (
             <button
               type="button"
-              key={item}
+              key={config.chave}
               className={`area-card ${selecionada ? 'selecionada' : ''}`}
               style={{ borderTopColor: config.cor }}
-              onClick={() => setArea(selecionada ? 'Todas' : item)}
+              onClick={() => setArea(selecionada ? 'Todas' : config.chave)}
               title={`Filtrar por ${config.nome}`}
             >
               <span className="area-card-cor" style={{ backgroundColor: config.cor }} />
               <strong>{config.nome}</strong>
               <span>
-                {registrosDaVisao.filter((registro) => texto(registro['Área de resultado']) === item).length}
+                {registrosDaVisao.filter((registro) => chaveArea(registro['Área de resultado']) === config.chave).length}
                 {' '}{visao === 'Ranking Consolidado' ? 'itens finais' : 'registros'}
               </span>
             </button>
@@ -1007,7 +1029,7 @@ function App() {
           Área de Resultado
           <select value={area} onChange={(evento) => setArea(evento.target.value)}>
             <option value="Todas">Todas as áreas</option>
-            {areas.map((item) => <option key={item} value={item}>{nomeArea(item)}</option>)}
+            {areas.map((config) => <option key={config.chave} value={config.chave}>{config.nome}</option>)}
           </select>
         </label>
 
@@ -1070,7 +1092,7 @@ function App() {
             <div className="cartao-titulo">
               <span className="barra-titulo barra-titulo--turquesa" />
               <div>
-                <h2>Registros por Área de Resultado</h2>
+                <h2>Gráfico 1 – Registros por Área de Resultado</h2>
                 <p>Distribuição do recorte atual entre as cinco áreas estratégicas.</p>
               </div>
             </div>
@@ -1081,7 +1103,7 @@ function App() {
             <div className="cartao-titulo">
               <span className="barra-titulo barra-titulo--vermelho" />
               <div>
-                <h2>Composição do recorte</h2>
+                <h2>Gráfico 2 – Composição do recorte</h2>
                 <p>Participação de ativos, passivos e propostas na seleção atual.</p>
               </div>
             </div>
@@ -1244,7 +1266,7 @@ function App() {
               <div className="cartao-titulo">
                 <span className="barra-titulo barra-titulo--turquesa" />
                 <div>
-                  <h2>Composição final por área e tipo</h2>
+                  <h2>Gráfico 3 – Composição final por área e tipo</h2>
                   <p>Anel interno: ativos e passivos. Anel externo: distribuição quantitativa nas áreas de resultado.</p>
                 </div>
               </div>
@@ -1265,7 +1287,7 @@ function App() {
                 {areaMaisRepresentadaFinal && (
                   <p className="leitura-final">
                     <strong>Maior concentração.</strong>{' '}
-                    {areaMaisRepresentadaFinal.nomeCurto} reúne {areaMaisRepresentadaFinal.total} de {consolidadoFiltrado.length} itens
+                    {areaMaisRepresentadaFinal.nome} reúne {areaMaisRepresentadaFinal.total} de {consolidadoFiltrado.length} itens
                     {' '}({percentual(areaMaisRepresentadaFinal.total, consolidadoFiltrado.length).toFixed(0)}%),
                     com {areaMaisRepresentadaFinal.ativos} ativo(s) e {areaMaisRepresentadaFinal.passivos} passivo(s).
                   </p>
@@ -1273,7 +1295,7 @@ function App() {
                 {recorteSociedadeFinal && (
                   <p className="leitura-final">
                     <strong>Foco de superação.</strong>{' '}
-                    Sociedade concentra {recorteSociedadeFinal.passivos} passivos e nenhum ativo no recorte final,
+                    Sociedade Saudável, Segura e Justa concentra {recorteSociedadeFinal.passivos} passivos e nenhum ativo no recorte final,
                     sinalizando prioridade para enfrentamento de fragilidades sociais estruturais.
                   </p>
                 )}
@@ -1302,7 +1324,7 @@ function App() {
             <div className="matriz-areas-final">
               {distribuicaoFinalPorArea.map((item) => (
                 <article className="area-final" key={item.chave} style={{ borderTopColor: item.cor }}>
-                  <span className="area-final__nome">{item.nomeCurto}</span>
+                  <span className="area-final__nome">{item.nome}</span>
                   <strong>{item.total}</strong>
                   <span className="area-final__subtitulo">itens finais</span>
                   <div className="area-final__dados">
@@ -1317,7 +1339,7 @@ function App() {
           <section className="titulo-secao titulo-secao--destaques">
             <div>
               <span className="etiqueta">DESTAQUES ESTRATÉGICOS</span>
-              <h2>Ativos e passivos em evidência</h2>
+              <h2>Figuras 1 e 2 – Ativos e passivos em evidência</h2>
             </div>
             <p>Leitura visual inspirada na matriz de ativos e fragilidades: os números indicam a posição entre os destaques por score-base.</p>
           </section>
@@ -1342,6 +1364,7 @@ function App() {
               registros={consolidadoFiltrado}
               rotuloScore="Score-base"
               mostrarConvergenciaDeEvidencias
+              numeracaoSequencial
             />
           </section>
 
@@ -1383,7 +1406,7 @@ function App() {
                   <div className="cartao-titulo">
                     <span className="barra-titulo barra-titulo--turquesa" />
                     <div>
-                      <h2>Ativos mais priorizados</h2>
+                      <h2>Gráfico 4 – Ativos mais priorizados na escuta técnica</h2>
                       <p>Quantidade de participantes que elegeram cada ativo entre as prioridades.</p>
                     </div>
                   </div>
@@ -1396,7 +1419,7 @@ function App() {
                   <div className="cartao-titulo">
                     <span className="barra-titulo barra-titulo--vermelho" />
                     <div>
-                      <h2>Passivos mais priorizados</h2>
+                      <h2>Gráfico 5 – Passivos mais priorizados na escuta técnica</h2>
                       <p>Quantidade de participantes que elegeram cada passivo entre as prioridades.</p>
                     </div>
                   </div>
