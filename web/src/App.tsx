@@ -5,47 +5,26 @@ import './index.css'
 
 type Registro = Record<string, unknown>
 
-type Fase = {
-  fase: number
-  titulo: string
-  descricao: string
-  base: string
-}
-
-type SinteseData = {
-  titulo: string
-  descricao: string
-  entidades: Registro[]
-  classificacoes: Registro[]
-  notaMetodologica: string
-  fases: Fase[]
-  criteriosRanking: Registro[]
-}
-
-type ReferenciasData = {
-  desafios: Registro[]
-  indicadores: Registro[]
-}
-
 type Metadados = {
   titulo: string
   geradoEm: string
   fonte: string
   registros: Record<string, number>
-  distribuicao: Record<string, Record<string, number>>
+  distribuicao: {
+    porTipo: Record<string, number>
+    porArea: Record<string, number>
+    porPrioridade: Record<string, number>
+  }
   metodologia: {
-    criterios: Registro[]
-    consolidadoNota: string
+    adesaoDesafiosEMaturidade: number
+    votacaoEscuta: number
+    qualidadeDaInformacao: number
+    factibilidadeFiscalOrientativa: number
     nota: string
   }
-  rankingConsolidadoResumo: Record<string, number | string>
-  propostaFinalResumo: Record<string, number | string>
 }
 
-type Visao = 'Síntese' | 'Referências do Plano' | 'Escuta Técnica' | 'Ranking Consolidado' | 'Proposta Final'
-type DirecaoOrdenacao = 'asc' | 'desc'
-type ItemPaginacao = number | '…'
-type CampoOrdenacao = 'Posição' | 'Tema, ativo ou passivo' | 'Área de resultado' | 'Tipo' | 'Score final (0–100)' | 'Prioridade' | 'Grau de factibilidade'
+type Visao = 'Resumo' | 'Ranking' | 'Ranking Consolidado' | 'Lacunas' | 'Método'
 
 type AreaConfig = {
   chave: string
@@ -65,23 +44,47 @@ const CORES_IDENTIDADE = {
 }
 
 const AREAS: AreaConfig[] = [
-  { chave: 'educa', nome: 'Educação, Identidade e Cultura Transformadoras e Estruturantes', nomeCurto: 'Educação, identidade e cultura', cor: '#F4C034', ordem: 1 },
-  { chave: 'econom', nome: 'Economia Próspera e Inclusiva', nomeCurto: 'Economia', cor: '#E0382C', ordem: 2 },
-  { chave: 'meio ambiente', nome: 'Meio Ambiente Valorizado e Resiliente', nomeCurto: 'Meio ambiente', cor: '#50C08C', ordem: 3 },
-  { chave: 'sociedade', nome: 'Sociedade Saudável, Segura e Justa', nomeCurto: 'Sociedade', cor: '#F4A840', ordem: 4 },
-  { chave: 'governan', nome: 'Governança Efetiva, Conectada e Inovadora', nomeCurto: 'Governança', cor: '#2CA4B0', ordem: 5 },
+  {
+    chave: 'educa',
+    nome: 'Educação, Identidade e Cultura Transformadoras e Estruturantes',
+    nomeCurto: 'Educação, identidade e cultura',
+    cor: '#F4C034',
+    ordem: 1,
+  },
+  {
+    chave: 'econom',
+    nome: 'Economia Próspera e Inclusiva',
+    nomeCurto: 'Economia',
+    cor: '#E0382C',
+    ordem: 2,
+  },
+  {
+    chave: 'meio ambiente',
+    nome: 'Meio Ambiente Valorizado e Resiliente',
+    nomeCurto: 'Meio ambiente',
+    cor: '#50C08C',
+    ordem: 3,
+  },
+  {
+    chave: 'sociedade',
+    nome: 'Sociedade Saudável, Segura e Justa',
+    nomeCurto: 'Sociedade',
+    cor: '#F4A840',
+    ordem: 4,
+  },
+  {
+    chave: 'governan',
+    nome: 'Governança Efetiva, Conectada e Inovadora',
+    nomeCurto: 'Governança',
+    cor: '#2CA4B0',
+    ordem: 5,
+  },
 ]
 
-const VISOES: Visao[] = ['Proposta Final', 'Síntese', 'Escuta Técnica', 'Ranking Consolidado', 'Referências do Plano']
+const VISOES: Visao[] = ['Resumo', 'Ranking', 'Ranking Consolidado', 'Lacunas', 'Método']
 
 function texto(valor: unknown) {
   return String(valor ?? '').trim()
-}
-function prioridadePublica(valor: unknown) {
-  return texto(valor)
-    .replace(/\s*[\(\[]\s*validar\s*[\)\]]\s*/gi, '')
-    .replace(/\s+/g, ' ')
-    .trim()
 }
 
 function numero(valor: unknown) {
@@ -91,12 +94,16 @@ function numero(valor: unknown) {
 }
 
 function normalizar(valor: string) {
-  return valor.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR')
+  return valor
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase('pt-BR')
 }
 
 function configArea(valor: unknown): AreaConfig {
   const valorNormalizado = normalizar(texto(valor))
-  return AREAS.find((item) => valorNormalizado.includes(normalizar(item.chave))) ?? {
+  const encontrada = AREAS.find((item) => valorNormalizado.includes(normalizar(item.chave)))
+  return encontrada ?? {
     chave: valorNormalizado || 'nao informado',
     nome: texto(valor) || 'Não informado',
     nomeCurto: texto(valor) || 'Não informado',
@@ -113,6 +120,29 @@ function corArea(valor: unknown) {
   return configArea(valor).cor
 }
 
+function percentual(parte: number, total: number) {
+  return total > 0 ? (parte / total) * 100 : 0
+}
+
+function corComOpacidade(hex: string, opacidade: number) {
+  const valor = hex.replace('#', '')
+  if (valor.length !== 6) return hex
+
+  const vermelho = Number.parseInt(valor.slice(0, 2), 16)
+  const verde = Number.parseInt(valor.slice(2, 4), 16)
+  const azul = Number.parseInt(valor.slice(4, 6), 16)
+  return `rgba(${vermelho}, ${verde}, ${azul}, ${opacidade})`
+}
+
+function ePrioridadeAlta(valor: unknown) {
+  const prioridade = normalizar(texto(valor))
+  return prioridade.startsWith('alta') || prioridade.includes('muito alta')
+}
+
+function requerValidacao(valor: unknown) {
+  return normalizar(texto(valor)).includes('validar')
+}
+
 function arquivoPublico(nome: string) {
   return `${import.meta.env.BASE_URL}data/${nome}`
 }
@@ -123,6 +153,13 @@ async function carregarJson<T>(nome: string): Promise<T> {
   return resposta.json() as Promise<T>
 }
 
+function contar(registros: Registro[], campo: string) {
+  return registros.reduce<Record<string, number>>((acumulado, registro) => {
+    const chave = texto(registro[campo]) || 'Não informado'
+    acumulado[chave] = (acumulado[chave] ?? 0) + 1
+    return acumulado
+  }, {})
+}
 
 function selecoesDaEscuta(registro: Registro) {
   const correspondencia = texto(registro['Prioridade na escuta']).match(/Seleções:\s*(\d+)/i)
@@ -134,20 +171,160 @@ function respondentesDaEscuta(registros: Registro[]) {
     const correspondencia = texto(registro['Prioridade na escuta']).match(/Seleções:\s*\d+\s*\/\s*(\d+)/i)
     return correspondencia ? Number(correspondencia[1]) : 0
   })
+
   return Math.max(0, ...denominadores)
 }
 
 function percentualDaEscuta(registro: Registro) {
   const correspondencia = texto(registro['Prioridade na escuta']).match(/Seleções:\s*(\d+)\s*\/\s*(\d+)/i)
   if (!correspondencia) return 0
+
   const selecoes = Number(correspondencia[1])
   const respondentes = Number(correspondencia[2])
   return respondentes > 0 ? (selecoes / respondentes) * 100 : 0
 }
 
-function valorMetricaEscuta(registro: Registro, metrica: string) {
-  const correspondencia = texto(registro['Prioridade na escuta']).match(new RegExp(`${metrica}:\\s*([\\d,.]+)`, 'i'))
+function valorDaMetricaDaEscuta(registro: Registro, metrica: string) {
+  const correspondencia = texto(registro['Prioridade na escuta']).match(
+    new RegExp(`${metrica}:\\s*([\\d,.]+)`, 'i'),
+  )
   return correspondencia ? numero(correspondencia[1]) : 0
+}
+
+function rotuloFactibilidade(valor: string) {
+  const normalizado = valor.toLocaleLowerCase('pt-BR')
+  if (normalizado.includes('alta')) return 'selo selo--alta'
+  if (normalizado.includes('baixa')) return 'selo selo--baixa'
+  return 'selo selo--media'
+}
+
+type CampoOrdenacao =
+  | 'Posição'
+  | 'Tema, ativo ou passivo'
+  | 'Área de resultado'
+  | 'Tipo'
+  | 'Origem'
+  | 'Score final (0–100)'
+  | 'Prioridade'
+  | 'Grau de factibilidade'
+
+type DirecaoOrdenacao = 'asc' | 'desc'
+type ItemPaginacao = number | '…'
+
+const COLUNAS_EXPORTACAO: Array<{ rotulo: string; campo: string }> = [
+  { rotulo: 'Posição', campo: 'Posição' },
+  { rotulo: 'Tema / ativo / passivo', campo: 'Tema, ativo ou passivo' },
+  { rotulo: 'Área de Resultado', campo: 'Área de resultado' },
+  { rotulo: 'Tipo', campo: 'Tipo' },
+  { rotulo: 'Origem', campo: 'Origem' },
+  { rotulo: 'Score final (0–100)', campo: 'Score final (0–100)' },
+  { rotulo: 'Prioridade', campo: 'Prioridade' },
+  { rotulo: 'Factibilidade', campo: 'Grau de factibilidade' },
+  { rotulo: 'Desafio(s) do Plano', campo: 'Desafio(s) do Plano' },
+  { rotulo: 'Indicador do Plano associado', campo: 'Indicador do Plano associado' },
+  { rotulo: 'Fonte e localização', campo: 'Fonte e localização' },
+]
+
+function valorParaOrdenacao(registro: Registro, campo: CampoOrdenacao) {
+  if (campo === 'Posição' || campo === 'Score final (0–100)') {
+    return numero(registro[campo])
+  }
+
+  if (campo === 'Área de resultado') {
+    return nomeArea(registro[campo])
+  }
+
+  return texto(registro[campo])
+}
+
+function compararRegistros(
+  a: Registro,
+  b: Registro,
+  campo: CampoOrdenacao,
+  direcao: DirecaoOrdenacao,
+) {
+  const valorA = valorParaOrdenacao(a, campo)
+  const valorB = valorParaOrdenacao(b, campo)
+
+  let resultado = 0
+
+  if (typeof valorA === 'number' && typeof valorB === 'number') {
+    resultado = valorA - valorB
+  } else {
+    resultado = String(valorA).localeCompare(String(valorB), 'pt-BR', {
+      numeric: true,
+      sensitivity: 'base',
+    })
+  }
+
+  return direcao === 'asc' ? resultado : -resultado
+}
+
+function paginasVisiveis(atual: number, total: number): ItemPaginacao[] {
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, indice) => indice + 1)
+  }
+
+  let inicio = Math.max(2, atual - 1)
+  let fim = Math.min(total - 1, atual + 1)
+
+  if (atual <= 4) {
+    inicio = 2
+    fim = 5
+  }
+
+  if (atual >= total - 3) {
+    inicio = total - 4
+    fim = total - 1
+  }
+
+  const itens: ItemPaginacao[] = [1]
+
+  if (inicio > 2) itens.push('…')
+
+  for (let pagina = inicio; pagina <= fim; pagina += 1) {
+    itens.push(pagina)
+  }
+
+  if (fim < total - 1) itens.push('…')
+
+  itens.push(total)
+  return itens
+}
+
+function valorExportacao(registro: Registro, campo: string) {
+  if (campo === 'Área de resultado') return nomeArea(registro[campo])
+  if (campo === 'Score final (0–100)') return numero(registro[campo]).toFixed(1)
+  return texto(registro[campo])
+}
+
+function escaparCsv(valor: string) {
+  return `"${valor.replace(/"/g, '""')}"`
+}
+
+function baixarCsv(registros: Registro[]) {
+  const cabecalho = COLUNAS_EXPORTACAO
+    .map((coluna) => escaparCsv(coluna.rotulo))
+    .join(';')
+
+  const linhas = registros.map((registro) =>
+    COLUNAS_EXPORTACAO
+      .map((coluna) => escaparCsv(valorExportacao(registro, coluna.campo)))
+      .join(';'),
+  )
+
+  const conteudo = `\uFEFF${[cabecalho, ...linhas].join('\r\n')}`
+  const blob = new Blob([conteudo], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  const data = new Date().toISOString().slice(0, 10)
+
+  link.href = url
+  link.download = `ranking_maranhao_2050_${data}.csv`
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(url)
 }
 
 function classeTipo(valor: unknown) {
@@ -158,149 +335,41 @@ function classeTipo(valor: unknown) {
   return 'tipo'
 }
 
-function rotuloFactibilidade(valor: string) {
-  const normalizado = normalizar(valor)
-  if (normalizado.includes('alta')) return 'selo selo--alta'
-  if (normalizado.includes('baixa')) return 'selo selo--baixa'
-  return 'selo selo--media'
-}
-
-function statusCobertura(valor: unknown) {
-  const valorNormalizado = normalizar(texto(valor))
-  if (valorNormalizado === 'coberta') return 'status-cobertura status-cobertura--coberta'
-  if (valorNormalizado.includes('complement')) return 'status-cobertura status-cobertura--complementacao'
-  return 'status-cobertura status-cobertura--nao'
-}
-
-function valorOrdenacao(registro: Registro, campo: CampoOrdenacao) {
-  if (campo === 'Posição' || campo === 'Score final (0–100)') return numero(registro[campo])
-  if (campo === 'Área de resultado') return nomeArea(registro[campo])
-  return texto(registro[campo])
-}
-
-function ordenarRegistros(registros: Registro[], campo: CampoOrdenacao, direcao: DirecaoOrdenacao) {
-  return [...registros].sort((a, b) => {
-    const va = valorOrdenacao(a, campo)
-    const vb = valorOrdenacao(b, campo)
-    const resultado = typeof va === 'number' && typeof vb === 'number'
-      ? va - vb
-      : String(va).localeCompare(String(vb), 'pt-BR', { numeric: true, sensitivity: 'base' })
-    return direcao === 'asc' ? resultado : -resultado
-  })
-}
-
-function paginasVisiveis(atual: number, total: number): ItemPaginacao[] {
-  if (total <= 7) return Array.from({ length: total }, (_, indice) => indice + 1)
-  let inicio = Math.max(2, atual - 1)
-  let fim = Math.min(total - 1, atual + 1)
-  if (atual <= 4) { inicio = 2; fim = 5 }
-  if (atual >= total - 3) { inicio = total - 4; fim = total - 1 }
-  const itens: ItemPaginacao[] = [1]
-  if (inicio > 2) itens.push('…')
-  for (let pagina = inicio; pagina <= fim; pagina += 1) itens.push(pagina)
-  if (fim < total - 1) itens.push('…')
-  itens.push(total)
-  return itens
-}
-
-function escaparCsv(valor: string) {
-  return `"${valor.replace(/"/g, '""')}"`
-}
-
-function baixarCsv(registros: Registro[], nomeBase: string, colunas: Array<{ rotulo: string; campo: string }>) {
-  const cabecalho = colunas.map((coluna) => escaparCsv(coluna.rotulo)).join(';')
-  const linhas = registros.map((registro) => colunas.map((coluna) => {
-    const valor = coluna.campo === 'Área de resultado' ? nomeArea(registro[coluna.campo]) : texto(registro[coluna.campo])
-    return escaparCsv(valor)
-  }).join(';'))
-  const conteudo = `\uFEFF${[cabecalho, ...linhas].join('\r\n')}`
-  const blob = new Blob([conteudo], { type: 'text/csv;charset=utf-8;' })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = `${nomeBase}_${new Date().toISOString().slice(0, 10)}.csv`
-  document.body.appendChild(link)
-  link.click()
-  link.remove()
-  URL.revokeObjectURL(url)
-}
-
-function AreaBadge({ valor }: { valor: unknown }) {
-  return <span className="area" style={{ backgroundColor: corArea(valor) }}>{nomeArea(valor)}</span>
-}
-
-function Filtros({ area, setArea, tipo, setTipo, busca, setBusca }: {
-  area: string
-  setArea: (valor: string) => void
-  tipo: string
-  setTipo: (valor: string) => void
-  busca: string
-  setBusca: (valor: string) => void
-}) {
-  return (
-    <section className="filtros filtros--tres" aria-label="Filtros do painel">
-      <label>
-        Área de Resultado
-        <select value={area} onChange={(evento) => setArea(evento.target.value)}>
-          <option value="Todas">Todas as áreas</option>
-          {AREAS.map((item) => <option key={item.nome} value={item.nome}>{item.nome}</option>)}
-        </select>
-      </label>
-      <label>
-        Tipo
-        <select value={tipo} onChange={(evento) => setTipo(evento.target.value)}>
-          <option value="Todos">Todos</option>
-          <option value="Ativo">Ativo</option>
-          <option value="Passivo">Passivo</option>
-          <option value="Proposta">Proposta</option>
-        </select>
-      </label>
-      <label className="busca">
-        Buscar tema
-        <input value={busca} onChange={(evento) => setBusca(evento.target.value)} placeholder="Ex.: logística, pobreza, inovação" />
-      </label>
-    </section>
-  )
-}
-
-function Paginacao({ pagina, totalPaginas, totalRegistros, inicio, fim, setPagina }: {
-  pagina: number
-  totalPaginas: number
-  totalRegistros: number
-  inicio: number
-  fim: number
-  setPagina: (pagina: number) => void
-}) {
-  const paginas = paginasVisiveis(pagina, totalPaginas)
-  return (
-    <div className="paginacao">
-      <span>Mostrando {totalRegistros === 0 ? 0 : inicio + 1}–{Math.min(fim, totalRegistros)} de {totalRegistros}</span>
-      <div className="paginacao-acoes">
-        <button type="button" onClick={() => setPagina(Math.max(1, pagina - 1))} disabled={pagina === 1}>←</button>
-        <div className="paginacao-paginas">
-          {paginas.map((item, indice) => item === '…'
-            ? <span className="reticencias" key={`ret-${indice}`}>…</span>
-            : <button type="button" key={item} className={`pagina-numero ${item === pagina ? 'ativa' : ''}`} onClick={() => setPagina(item)}>{item}</button>)}
-        </div>
-        <button type="button" onClick={() => setPagina(Math.min(totalPaginas, pagina + 1))} disabled={pagina >= totalPaginas}>→</button>
-      </div>
-    </div>
-  )
-}
-
-function TabelaPriorizacao({ registros, campoOrdenacao, direcao, aoOrdenar, rotuloScore = 'Score-base' }: {
+function TabelaRanking({
+  registros,
+  campoOrdenacao,
+  direcaoOrdenacao,
+  aoOrdenar,
+  rotuloScore = 'Score',
+  mostrarConvergenciaDeEvidencias = false,
+}: {
   registros: Registro[]
-  campoOrdenacao: CampoOrdenacao
-  direcao: DirecaoOrdenacao
-  aoOrdenar: (campo: CampoOrdenacao) => void
+  campoOrdenacao?: CampoOrdenacao
+  direcaoOrdenacao?: DirecaoOrdenacao
+  aoOrdenar?: (campo: CampoOrdenacao) => void
   rotuloScore?: string
+  mostrarConvergenciaDeEvidencias?: boolean
 }) {
-  function th(rotulo: string, campo: CampoOrdenacao) {
+  function cabecalho(rotulo: string, campo: CampoOrdenacao) {
+    if (!aoOrdenar) return <th>{rotulo}</th>
+
     const ativo = campoOrdenacao === campo
+    const ariaSort = ativo
+      ? (direcaoOrdenacao === 'asc' ? 'ascending' : 'descending')
+      : 'none'
+
     return (
-      <th aria-sort={ativo ? (direcao === 'asc' ? 'ascending' : 'descending') : 'none'}>
-        <button className={`cabecalho-ordenavel ${ativo ? 'ativo' : ''}`} type="button" onClick={() => aoOrdenar(campo)}>
-          <span>{rotulo}</span><span className="icone-ordenacao">{ativo ? (direcao === 'asc' ? '↑' : '↓') : '↕'}</span>
+      <th aria-sort={ariaSort}>
+        <button
+          type="button"
+          className={`cabecalho-ordenavel ${ativo ? 'ativo' : ''}`}
+          onClick={() => aoOrdenar(campo)}
+          title={`Ordenar por ${rotulo}`}
+        >
+          <span>{rotulo}</span>
+          <span className="icone-ordenacao" aria-hidden="true">
+            {ativo ? (direcaoOrdenacao === 'asc' ? '↑' : '↓') : '↕'}
+          </span>
         </button>
       </th>
     )
@@ -308,371 +377,1139 @@ function TabelaPriorizacao({ registros, campoOrdenacao, direcao, aoOrdenar, rotu
 
   return (
     <div className="tabela-wrap">
-      <table className="tabela-priorizacao">
-        <thead><tr>
-          {th('Pos.', 'Posição')}{th('Ativo ou passivo', 'Tema, ativo ou passivo')}{th('Área de Resultado', 'Área de resultado')}{th('Tipo', 'Tipo')}{th(rotuloScore, 'Score final (0–100)')}{th('Prioridade', 'Prioridade')}{th('Factibilidade', 'Grau de factibilidade')}<th>Tratamento / evidências</th>
-        </tr></thead>
+      <table>
+        <thead>
+          <tr>
+            {cabecalho('Pos.', 'Posição')}
+            {cabecalho('Tema / ativo / passivo', 'Tema, ativo ou passivo')}
+            {cabecalho('Área de Resultado', 'Área de resultado')}
+            {cabecalho('Tipo', 'Tipo')}
+            {!mostrarConvergenciaDeEvidencias && cabecalho('Origem', 'Origem')}
+            {cabecalho(rotuloScore, 'Score final (0–100)')}
+            {cabecalho('Prioridade', 'Prioridade')}
+            {cabecalho('Factibilidade', 'Grau de factibilidade')}
+          </tr>
+        </thead>
         <tbody>
           {registros.map((registro) => (
             <tr key={`${texto(registro['Posição'])}-${texto(registro['Tema, ativo ou passivo'])}`}>
               <td className="posicao">{texto(registro['Posição'])}</td>
-              <td className="tema"><strong>{texto(registro['Tema, ativo ou passivo'])}</strong></td>
-              <td><AreaBadge valor={registro['Área de resultado']} /></td>
-              <td><span className={classeTipo(registro.Tipo)}>{texto(registro.Tipo)}</span></td>
-              <td><span className="score">{numero(registro['Score final (0–100)']).toFixed(1)}</span></td>
-              <td>{prioridadePublica(registro.Prioridade)}</td>
-              <td><span className={rotuloFactibilidade(texto(registro['Grau de factibilidade']))}>{texto(registro['Grau de factibilidade'])}</span></td>
-              <td className="detalhes-priorizacao">
+              <td className="tema">
+                <strong>{texto(registro['Tema, ativo ou passivo'])}</strong>
                 <details>
-                  <summary>Ver detalhes</summary>
-                  {texto(registro['Tratamento qualitativo']) && <p><b>Tratamento qualitativo:</b> {texto(registro['Tratamento qualitativo'])}</p>}
-                  <p><b>Origem e convergências:</b> {texto(registro.Origem) || 'Não informado'}</p>
-                  <p><b>Desafio(s):</b> {texto(registro['Desafio(s) do Plano']) || 'Não informado'}</p>
-                  <p><b>Indicador associado:</b> {texto(registro['Indicador do Plano associado']) || 'Não informado'}</p>
+                  <summary>Ver evidência e vínculo</summary>
+                  <p><b>Desafio:</b> {texto(registro['Desafio(s) do Plano']) || 'Não informado'}</p>
+                  <p><b>Indicador:</b> {texto(registro['Indicador do Plano associado']) || 'Não informado'}</p>
                   <p><b>Fonte:</b> {texto(registro['Fonte e localização']) || 'Não informado'}</p>
+                  {texto(registro['Tratamento qualitativo']) && (
+                    <p><b>Tratamento qualitativo:</b> {texto(registro['Tratamento qualitativo'])}</p>
+                  )}
+                  {texto(registro['Observações e comentários consolidados']) && (
+                    <p><b>Observações e comentários:</b> {texto(registro['Observações e comentários consolidados'])}</p>
+                  )}
                 </details>
+                {mostrarConvergenciaDeEvidencias && texto(registro.Origem) && (
+                  <details className="evidencias-convergentes">
+                    <summary title="Contribuições, fontes e registros integrados que reforçam este item.">
+                      Ver convergência de evidências
+                    </summary>
+                    <p>
+                      <b>Contribuições e evidências integradas:</b>{' '}
+                      {texto(registro.Origem)}
+                    </p>
+                  </details>
+                )}
+              </td>
+              <td>
+                <span
+                  className="area"
+                  style={{ backgroundColor: corArea(registro['Área de resultado']) }}
+                  title={nomeArea(registro['Área de resultado'])}
+                >
+                  {nomeArea(registro['Área de resultado'])}
+                </span>
+              </td>
+              <td><span className={classeTipo(registro.Tipo)}>{texto(registro.Tipo)}</span></td>
+              {!mostrarConvergenciaDeEvidencias && <td>{texto(registro.Origem)}</td>}
+              <td><span className="score">{numero(registro['Score final (0–100)']).toFixed(1)}</span></td>
+              <td>{texto(registro.Prioridade)}</td>
+              <td>
+                <span className={rotuloFactibilidade(texto(registro['Grau de factibilidade']))}>
+                  {texto(registro['Grau de factibilidade'])}
+                </span>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
-      {registros.length === 0 && <div className="tabela-vazia">Nenhum registro corresponde aos filtros selecionados.</div>}
+
+      {registros.length === 0 && (
+        <div className="tabela-vazia">
+          Nenhum registro encontrado para os filtros selecionados.
+        </div>
+      )}
     </div>
   )
 }
 
-function TabelaIntegrado({ registros }: { registros: Registro[] }) {
+function TabelaEscuta({
+  registros,
+  tipo,
+}: {
+  registros: Registro[]
+  tipo: 'Ativo' | 'Passivo'
+}) {
+  const rotuloMetrica = tipo === 'Ativo' ? 'Potencial médio' : 'Gravidade média'
+  const respondentes = respondentesDaEscuta(registros)
+
   return (
-    <div className="tabela-wrap">
+    <div className="tabela-wrap tabela-escuta">
       <table>
-        <thead><tr><th>Pos.</th><th>Tema</th><th>Subsídios técnicos</th><th>Área de Resultado</th><th>Tipo</th><th>Origem</th><th>Score</th><th>Prioridade</th></tr></thead>
-        <tbody>{registros.map((registro) => (
-          <tr key={`int-${texto(registro['Posição'])}-${texto(registro['Tema, ativo ou passivo'])}`}>
-            <td className="posicao">{texto(registro['Posição'])}</td>
-            <td className="tema"><strong>{texto(registro['Tema, ativo ou passivo'])}</strong></td>
-            <td className="subsidios-tecnicos"><details><summary>Ver subsídio</summary><p>{texto(registro['Subsídios técnicos']) || 'Não informado'}</p></details></td>
-            <td><AreaBadge valor={registro['Área de resultado']} /></td>
-            <td><span className={classeTipo(registro.Tipo)}>{texto(registro.Tipo)}</span></td>
-            <td>{texto(registro.Origem)}</td>
-            <td><span className="score">{numero(registro['Score final (0–100)']).toFixed(1)}</span></td>
-            <td>{prioridadePublica(registro.Prioridade)}</td>
+        <thead>
+          <tr>
+            <th>Pos.</th>
+            <th>{tipo}</th>
+            <th>Área de Resultado</th>
+            <th>Eleições</th>
+            <th>{rotuloMetrica}</th>
+            <th>Urgência média</th>
+            <th>Desafio do Plano</th>
           </tr>
-        ))}</tbody>
+        </thead>
+        <tbody>
+          {registros.map((registro, indice) => {
+            const selecoes = selecoesDaEscuta(registro)
+            const percentual = percentualDaEscuta(registro)
+
+            return (
+              <tr key={`${tipo}-${texto(registro['Tema, ativo ou passivo identificado'])}`}>
+                <td className="posicao">{indice + 1}</td>
+                <td className="tema">
+                  <strong>{texto(registro['Tema, ativo ou passivo identificado'])}</strong>
+                  <details>
+                    <summary>Ver evidência e vínculo</summary>
+                    <p><b>Evidência:</b> {texto(registro['Evidência da escuta']) || 'Não informado'}</p>
+                    <p><b>Indicador:</b> {texto(registro['Indicador do Plano associado']) || 'Não informado'}</p>
+                    <p><b>Fonte:</b> {texto(registro['Fonte e localização']) || 'Não informado'}</p>
+                  </details>
+                </td>
+                <td>
+                  <span
+                    className="area"
+                    style={{ backgroundColor: corArea(registro['Área de resultado']) }}
+                    title={nomeArea(registro['Área de resultado'])}
+                  >
+                    {nomeArea(registro['Área de resultado'])}
+                  </span>
+                </td>
+                <td className="dados-escuta">
+                  <span className="score">{selecoes}/{respondentes || '–'}</span>
+                  <small>{percentual.toFixed(0)}% dos participantes</small>
+                </td>
+                <td>{valorDaMetricaDaEscuta(registro, rotuloMetrica).toFixed(2)}</td>
+                <td>{valorDaMetricaDaEscuta(registro, 'Urgência média').toFixed(2)}</td>
+                <td>{texto(registro['Desafio do Plano relacionado']) || 'Não informado'}</td>
+              </tr>
+            )
+          })}
+        </tbody>
       </table>
+
+      {registros.length === 0 && (
+        <div className="tabela-vazia">
+          Nenhum {tipo.toLocaleLowerCase('pt-BR')} priorizado para os filtros selecionados.
+        </div>
+      )}
     </div>
+  )
+}
+
+function MapaDestaques({
+  tipo,
+  registros,
+}: {
+  tipo: 'Ativo' | 'Passivo'
+  registros: Registro[]
+}) {
+  const destaques = registros.slice(0, 7)
+  const rotuloTipo = tipo === 'Ativo' ? 'Ativos e potencialidades' : 'Passivos e fragilidades'
+  const corCentral = tipo === 'Ativo' ? CORES_IDENTIDADE.turquesa : CORES_IDENTIDADE.vermelho
+  const gradiente = destaques.length === 0
+    ? '#eef1f2'
+    : `conic-gradient(from -90deg, ${destaques.map((registro, indice) => {
+      const inicio = (indice / destaques.length) * 360
+      const fim = ((indice + 1) / destaques.length) * 360
+      const cor = corArea(registro['Área de resultado'])
+      return `${cor} ${inicio}deg ${Math.max(inicio, fim - 1.5)}deg, #ffffff ${Math.max(inicio, fim - 1.5)}deg ${fim}deg`
+    }).join(', ')})`
+
+  return (
+    <article className={`mapa-destaques mapa-destaques--${tipo.toLocaleLowerCase('pt-BR')}`}>
+      <div className="mapa-destaques__visual" aria-label={`${rotuloTipo}: principais destaques da lista final`}>
+        <div className="mapa-destaques__anel" style={{ background: gradiente }}>
+          {destaques.map((registro, indice) => {
+            const angulo = ((indice / destaques.length) * 360) - 90
+            return (
+              <span
+                className="mapa-destaques__numero"
+                key={`${tipo}-${texto(registro['Tema, ativo ou passivo'])}`}
+                style={{ transform: `translate(-50%, -50%) rotate(${angulo}deg) translateY(-126px) rotate(${-angulo}deg)` }}
+                title={texto(registro['Tema, ativo ou passivo'])}
+              >
+                {indice + 1}
+              </span>
+            )
+          })}
+          <div className="mapa-destaques__centro" style={{ backgroundColor: corCentral }}>
+            <span>{rotuloTipo}</span>
+            <strong>{registros.length}</strong>
+            <small>itens finais</small>
+          </div>
+        </div>
+      </div>
+
+      <ol className="mapa-destaques__lista">
+        {destaques.map((registro, indice) => (
+          <li key={`${tipo}-lista-${texto(registro['Tema, ativo ou passivo'])}`}>
+            <span className="mapa-destaques__ordem">{indice + 1}</span>
+            <div>
+              <strong>{texto(registro['Tema, ativo ou passivo'])}</strong>
+              <small>
+                {configArea(registro['Área de resultado']).nomeCurto}
+                {' · Score-base '}{numero(registro['Score final (0–100)']).toFixed(1)}
+              </small>
+            </div>
+          </li>
+        ))}
+      </ol>
+
+      <p className="mapa-destaques__nota">Destaques ordenados pelo score-base. A lista final completa está apresentada abaixo.</p>
+    </article>
   )
 }
 
 function App() {
-  const [sintese, setSintese] = useState<SinteseData | null>(null)
-  const [referencias, setReferencias] = useState<ReferenciasData | null>(null)
+  const [ranking, setRanking] = useState<Registro[]>([])
+  const [consolidadoQualitativo, setConsolidadoQualitativo] = useState<Registro[]>([])
   const [escuta, setEscuta] = useState<Registro[]>([])
-  const [rankingIntegrado, setRankingIntegrado] = useState<Registro[]>([])
-  const [consolidado, setConsolidado] = useState<Registro[]>([])
-  const [propostaFinal, setPropostaFinal] = useState<Registro[]>([])
+  const [lacunas, setLacunas] = useState<Registro[]>([])
   const [metadados, setMetadados] = useState<Metadados | null>(null)
-  const [visao, setVisao] = useState<Visao>('Proposta Final')
-  const [erro, setErro] = useState('')
-
+  const [visao, setVisao] = useState<Visao>('Resumo')
   const [area, setArea] = useState('Todas')
   const [tipo, setTipo] = useState('Todos')
+  const [origem, setOrigem] = useState('Todas')
   const [busca, setBusca] = useState('')
-  const [areaReferencia, setAreaReferencia] = useState('Todas')
-  const [buscaReferencia, setBuscaReferencia] = useState('')
-
-  const [paginaConsolidado, setPaginaConsolidado] = useState(1)
-  const [paginaFinal, setPaginaFinal] = useState(1)
-  const [paginaIntegrado, setPaginaIntegrado] = useState(1)
-  const [itensPorPagina, setItensPorPagina] = useState(15)
-  const [campoConsolidado, setCampoConsolidado] = useState<CampoOrdenacao>('Score final (0–100)')
-  const [direcaoConsolidado, setDirecaoConsolidado] = useState<DirecaoOrdenacao>('desc')
-  const [campoFinal, setCampoFinal] = useState<CampoOrdenacao>('Posição')
-  const [direcaoFinal, setDirecaoFinal] = useState<DirecaoOrdenacao>('asc')
+  const [erro, setErro] = useState('')
+  const [paginaAtual, setPaginaAtual] = useState(1)
+  const [itensPorPagina, setItensPorPagina] = useState(25)
+  const [campoOrdenacao, setCampoOrdenacao] = useState<CampoOrdenacao>('Score final (0–100)')
+  const [direcaoOrdenacao, setDirecaoOrdenacao] = useState<DirecaoOrdenacao>('desc')
 
   useEffect(() => {
     Promise.all([
-      carregarJson<SinteseData>('sintese.json'),
-      carregarJson<ReferenciasData>('referencias-plano.json'),
-      carregarJson<Registro[]>('escuta-tecnica.json'),
       carregarJson<Registro[]>('ranking-integrado.json'),
-      carregarJson<Registro[]>('ranking-consolidado.json'),
-      carregarJson<Registro[]>('proposta-final.json'),
+      carregarJson<Registro[]>('ranking-consolidado-ap.json'),
+      carregarJson<Registro[]>('escuta-tecnica.json'),
+      carregarJson<Registro[]>('lacunas-indicadores.json'),
       carregarJson<Metadados>('metadados.json'),
     ])
-      .then(([s, r, e, ri, c, pf, m]) => {
-        setSintese(s); setReferencias(r); setEscuta(e); setRankingIntegrado(ri); setConsolidado(c); setPropostaFinal(pf); setMetadados(m)
+      .then(([dadosRanking, dadosConsolidadoQualitativo, dadosEscuta, dadosLacunas, dadosMetadados]) => {
+        setRanking(dadosRanking)
+        setConsolidadoQualitativo(dadosConsolidadoQualitativo)
+        setEscuta(dadosEscuta)
+        setLacunas(dadosLacunas)
+        setMetadados(dadosMetadados)
       })
       .catch((causa: Error) => setErro(causa.message))
   }, [])
 
-  const filtrar = (registros: Registro[]) => registros
+  const areas = useMemo(
+    () => Array.from(new Set(ranking.map((registro) => texto(registro['Área de resultado']))))
+      .filter(Boolean)
+      .sort((a, b) => configArea(a).ordem - configArea(b).ordem),
+    [ranking],
+  )
+
+  const tipos = useMemo(
+    () => Array.from(new Set(ranking.map((registro) => texto(registro.Tipo)))).filter(Boolean).sort(),
+    [ranking],
+  )
+
+  const origens = useMemo(
+    () => Array.from(new Set(ranking.map((registro) => texto(registro.Origem)))).filter(Boolean).sort(),
+    [ranking],
+  )
+
+  const filtrados = useMemo(() => ranking
     .filter((registro) => area === 'Todas' || texto(registro['Área de resultado']) === area)
     .filter((registro) => tipo === 'Todos' || texto(registro.Tipo) === tipo)
-    .filter((registro) => normalizar(texto(registro['Tema, ativo ou passivo'] ?? registro['Tema, ativo ou passivo identificado'])).includes(normalizar(busca)))
+    .filter((registro) => origem === 'Todas' || texto(registro.Origem) === origem)
+    .filter((registro) => texto(registro['Tema, ativo ou passivo']).toLocaleLowerCase('pt-BR').includes(busca.toLocaleLowerCase('pt-BR')))
+    .sort((a, b) => numero(b['Score final (0–100)']) - numero(a['Score final (0–100)'])),
+    [ranking, area, tipo, origem, busca],
+  )
 
-  const consolidadoFiltrado = useMemo(() => filtrar(consolidado), [consolidado, area, tipo, busca])
-  const finalFiltrado = useMemo(() => filtrar(propostaFinal), [propostaFinal, area, tipo, busca])
-  const integradoFiltrado = useMemo(() => filtrar(rankingIntegrado), [rankingIntegrado, area, tipo, busca])
+  const top10 = filtrados.slice(0, 10)
 
-  const consolidadoOrdenado = useMemo(() => ordenarRegistros(consolidadoFiltrado, campoConsolidado, direcaoConsolidado), [consolidadoFiltrado, campoConsolidado, direcaoConsolidado])
-  const finalOrdenado = useMemo(() => ordenarRegistros(finalFiltrado, campoFinal, direcaoFinal), [finalFiltrado, campoFinal, direcaoFinal])
-  const integradoOrdenado = useMemo(() => ordenarRegistros(integradoFiltrado, 'Score final (0–100)', 'desc'), [integradoFiltrado])
+  const rankingOrdenado = useMemo(
+    () => [...filtrados].sort((a, b) =>
+      compararRegistros(a, b, campoOrdenacao, direcaoOrdenacao),
+    ),
+    [filtrados, campoOrdenacao, direcaoOrdenacao],
+  )
 
-  const totalPaginasConsolidado = Math.max(1, Math.ceil(consolidadoOrdenado.length / itensPorPagina))
-  const inicioConsolidado = (paginaConsolidado - 1) * itensPorPagina
-  const fimConsolidado = inicioConsolidado + itensPorPagina
-  const consolidadoPaginado = consolidadoOrdenado.slice(inicioConsolidado, fimConsolidado)
+  const totalRegistrosRanking = rankingOrdenado.length
+  const totalPaginasRanking = Math.max(1, Math.ceil(totalRegistrosRanking / itensPorPagina))
+  const inicioPagina = (paginaAtual - 1) * itensPorPagina
+  const fimPagina = inicioPagina + itensPorPagina
+  const rankingPaginado = rankingOrdenado.slice(inicioPagina, fimPagina)
+  const paginasRanking = paginasVisiveis(paginaAtual, totalPaginasRanking)
 
-  const totalPaginasFinal = Math.max(1, Math.ceil(finalOrdenado.length / itensPorPagina))
-  const inicioFinal = (paginaFinal - 1) * itensPorPagina
-  const fimFinal = inicioFinal + itensPorPagina
-  const finalPaginado = finalOrdenado.slice(inicioFinal, fimFinal)
+  const porArea = contar(filtrados, 'Área de resultado')
+  const porTipo = contar(filtrados, 'Tipo')
 
-  const totalPaginasIntegrado = Math.max(1, Math.ceil(integradoOrdenado.length / 25))
-  const inicioIntegrado = (paginaIntegrado - 1) * 25
-  const fimIntegrado = inicioIntegrado + 25
-  const integradoPaginado = integradoOrdenado.slice(inicioIntegrado, fimIntegrado)
+  const consolidadoFiltrado = useMemo(() => consolidadoQualitativo
+    .filter((registro) => area === 'Todas' || texto(registro['Área de resultado']) === area)
+    .filter((registro) => tipo === 'Todos' || texto(registro.Tipo) === tipo)
+    .filter((registro) => origem === 'Todas' || texto(registro.Origem).includes(origem))
+    .filter((registro) => normalizar(texto(registro['Tema, ativo ou passivo'])).includes(normalizar(busca)))
+    .sort((a, b) => numero(b['Score final (0–100)']) - numero(a['Score final (0–100)'])),
+  [consolidadoQualitativo, area, tipo, origem, busca])
 
-  useEffect(() => { setPaginaConsolidado(1); setPaginaFinal(1); setPaginaIntegrado(1) }, [area, tipo, busca, itensPorPagina])
+  const ativosConsolidados = useMemo(
+    () => consolidadoFiltrado.filter((registro) => texto(registro.Tipo) === 'Ativo'),
+    [consolidadoFiltrado],
+  )
 
-  function alternarOrdenacao(campo: CampoOrdenacao, conjunto: 'consolidado' | 'final') {
-    if (conjunto === 'consolidado') {
-      setPaginaConsolidado(1)
-      if (campo === campoConsolidado) setDirecaoConsolidado((d) => d === 'asc' ? 'desc' : 'asc')
-      else { setCampoConsolidado(campo); setDirecaoConsolidado(campo === 'Score final (0–100)' ? 'desc' : 'asc') }
-    } else {
-      setPaginaFinal(1)
-      if (campo === campoFinal) setDirecaoFinal((d) => d === 'asc' ? 'desc' : 'asc')
-      else { setCampoFinal(campo); setDirecaoFinal(campo === 'Score final (0–100)' ? 'desc' : 'asc') }
+  const passivosConsolidados = useMemo(
+    () => consolidadoFiltrado.filter((registro) => texto(registro.Tipo) === 'Passivo'),
+    [consolidadoFiltrado],
+  )
+
+  const distribuicaoFinalPorArea = useMemo(() => AREAS.map((config) => {
+    const registrosDaArea = consolidadoFiltrado.filter((registro) =>
+      configArea(registro['Área de resultado']).chave === config.chave,
+    )
+    const ativos = registrosDaArea.filter((registro) => texto(registro.Tipo) === 'Ativo').length
+    const passivos = registrosDaArea.filter((registro) => texto(registro.Tipo) === 'Passivo').length
+
+    return {
+      ...config,
+      ativos,
+      passivos,
+      total: ativos + passivos,
+    }
+  }).filter((item) => item.total > 0), [consolidadoFiltrado])
+
+  const totalPrioridadeAltaFinal = useMemo(
+    () => consolidadoFiltrado.filter((registro) => ePrioridadeAlta(registro.Prioridade)).length,
+    [consolidadoFiltrado],
+  )
+
+  const totalComValidacaoFinal = useMemo(
+    () => consolidadoFiltrado.filter((registro) => requerValidacao(registro.Prioridade)).length,
+    [consolidadoFiltrado],
+  )
+
+  const scoreMedioFinal = useMemo(() => {
+    if (consolidadoFiltrado.length === 0) return 0
+    return consolidadoFiltrado.reduce(
+      (soma, registro) => soma + numero(registro['Score final (0–100)']),
+      0,
+    ) / consolidadoFiltrado.length
+  }, [consolidadoFiltrado])
+
+  const areaMaisRepresentadaFinal = useMemo(
+    () => [...distribuicaoFinalPorArea].sort((a, b) => b.total - a.total)[0],
+    [distribuicaoFinalPorArea],
+  )
+
+  const recorteSociedadeFinal = useMemo(
+    () => distribuicaoFinalPorArea.find((item) => item.chave === 'sociedade'),
+    [distribuicaoFinalPorArea],
+  )
+
+  const escutaFiltrada = useMemo(() => escuta
+    .filter((registro) => area === 'Todas' || texto(registro['Área de resultado']) === area)
+    .filter((registro) => tipo === 'Todos' || texto(registro.Tipo) === tipo)
+    .filter((registro) => texto(registro['Tema, ativo ou passivo identificado']).toLocaleLowerCase('pt-BR').includes(busca.toLocaleLowerCase('pt-BR')))
+    .filter((registro) => selecoesDaEscuta(registro) > 0)
+    .sort((a, b) => selecoesDaEscuta(b) - selecoesDaEscuta(a)), [escuta, area, tipo, busca])
+
+  const ativosPriorizadosEscuta = useMemo(
+    () => escutaFiltrada.filter((registro) => texto(registro.Tipo) === 'Ativo'),
+    [escutaFiltrada],
+  )
+
+  const passivosPriorizadosEscuta = useMemo(
+    () => escutaFiltrada.filter((registro) => texto(registro.Tipo) === 'Passivo'),
+    [escutaFiltrada],
+  )
+
+  const participantesEscuta = useMemo(() => respondentesDaEscuta(escuta), [escuta])
+  const totalPriorizadosEscuta = ativosPriorizadosEscuta.length + passivosPriorizadosEscuta.length
+
+  useEffect(() => {
+    setPaginaAtual(1)
+  }, [area, tipo, origem, busca, itensPorPagina])
+
+  useEffect(() => {
+    if (paginaAtual > totalPaginasRanking) {
+      setPaginaAtual(totalPaginasRanking)
+    }
+  }, [paginaAtual, totalPaginasRanking])
+
+  function ordenarRanking(campo: CampoOrdenacao) {
+    setPaginaAtual(1)
+
+    if (campo === campoOrdenacao) {
+      setDirecaoOrdenacao((direcao) => direcao === 'asc' ? 'desc' : 'asc')
+      return
+    }
+
+    setCampoOrdenacao(campo)
+    setDirecaoOrdenacao(campo === 'Score final (0–100)' ? 'desc' : 'asc')
+  }
+
+  const dadosArea = Object.keys(porArea)
+    .sort((a, b) => configArea(a).ordem - configArea(b).ordem)
+
+  const graficoArea: EChartsOption = {
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'shadow' },
+    },
+    grid: { left: 12, right: 28, top: 22, bottom: 36, containLabel: true },
+    xAxis: {
+      type: 'value',
+      name: 'Número de registros',
+      nameLocation: 'middle',
+      nameGap: 28,
+      minInterval: 1,
+    },
+    yAxis: {
+      type: 'category',
+      data: dadosArea.map((chave) => configArea(chave).nomeCurto),
+      axisLabel: { width: 150, overflow: 'break', lineHeight: 15 },
+    },
+    series: [{
+      type: 'bar',
+      barMaxWidth: 30,
+      data: dadosArea.map((chave) => ({
+        value: porArea[chave],
+        itemStyle: {
+          color: corArea(chave),
+          borderRadius: [0, 8, 8, 0],
+        },
+      })),
+    }],
+  }
+
+  const graficoTipo: EChartsOption = {
+    color: [
+      CORES_IDENTIDADE.turquesa,
+      CORES_IDENTIDADE.vermelho,
+      CORES_IDENTIDADE.amarelo,
+      CORES_IDENTIDADE.laranja,
+      CORES_IDENTIDADE.verde,
+    ],
+    tooltip: { trigger: 'item' },
+    legend: { bottom: 0 },
+    series: [{
+      type: 'pie',
+      radius: ['52%', '76%'],
+      label: { formatter: '{b}: {c}' },
+      data: Object.entries(porTipo).map(([name, value]) => ({ name, value })),
+    }],
+  }
+
+  function opcoesGraficoEscuta(registros: Registro[]): EChartsOption {
+    return {
+      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+      grid: { left: 12, right: 20, top: 18, bottom: 106, containLabel: true },
+      xAxis: {
+        type: 'category',
+        name: 'Temas mais eleitos',
+        nameLocation: 'middle',
+        nameGap: 80,
+        data: registros.slice(0, 10).map((registro) => texto(registro['Tema, ativo ou passivo identificado'])),
+        axisLabel: { rotate: 35, width: 108, overflow: 'truncate' },
+      },
+      yAxis: { type: 'value', minInterval: 1, name: 'Eleições' },
+      series: [{
+        name: 'Eleições',
+        type: 'bar',
+        barMaxWidth: 42,
+        data: registros.slice(0, 10).map((registro) => ({
+          value: selecoesDaEscuta(registro),
+          itemStyle: {
+            color: corArea(registro['Área de resultado']),
+            borderRadius: [7, 7, 0, 0],
+          },
+        })),
+      }],
     }
   }
 
-  const desafiosFiltrados = useMemo(() => (referencias?.desafios ?? [])
-    .filter((r) => areaReferencia === 'Todas' || texto(r['Área de resultado']) === areaReferencia)
-    .filter((r) => normalizar(`${texto(r['Desafio estratégico'])} ${texto(r['Indicador principal de apoio'])}`).includes(normalizar(buscaReferencia))), [referencias, areaReferencia, buscaReferencia])
+  const graficoAtivosEscuta = opcoesGraficoEscuta(ativosPriorizadosEscuta)
+  const graficoPassivosEscuta = opcoesGraficoEscuta(passivosPriorizadosEscuta)
 
-  const indicadoresFiltrados = useMemo(() => (referencias?.indicadores ?? [])
-    .filter((r) => areaReferencia === 'Todas' || texto(r['Área de resultado']) === areaReferencia)
-    .filter((r) => normalizar(`${texto(r.Indicador)} ${texto(r['Uso na matriz'])}`).includes(normalizar(buscaReferencia))), [referencias, areaReferencia, buscaReferencia])
-
-  const participantesEscuta = useMemo(() => respondentesDaEscuta(escuta), [escuta])
-  const eleitosEscuta = useMemo(() => escuta.filter((r) => selecoesDaEscuta(r) > 0), [escuta])
-  const ativosEscuta = useMemo(() => filtrar(eleitosEscuta.filter((r) => texto(r.Tipo) === 'Ativo')).sort((a,b) => selecoesDaEscuta(b)-selecoesDaEscuta(a)), [eleitosEscuta, area, tipo, busca])
-  const passivosEscuta = useMemo(() => filtrar(eleitosEscuta.filter((r) => texto(r.Tipo) === 'Passivo')).sort((a,b) => selecoesDaEscuta(b)-selecoesDaEscuta(a)), [eleitosEscuta, area, tipo, busca])
-  const adicionaisEscuta = useMemo(() => filtrar(escuta.filter((r) => texto(r['Prioridade na escuta']).includes('Sem avaliação numérica'))), [escuta, area, tipo, busca])
-
-  const opcoesGraficoEscuta = (registros: Registro[], titulo: string): EChartsOption => ({
-    color: [titulo === 'Ativos' ? CORES_IDENTIDADE.turquesa : CORES_IDENTIDADE.vermelho],
-    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-    grid: { left: 12, right: 20, top: 18, bottom: 112, containLabel: true },
-    xAxis: { type: 'category', data: registros.slice(0, 10).map((r) => texto(r['Tema, ativo ou passivo identificado'])), axisLabel: { rotate: 35, width: 105, overflow: 'truncate' } },
-    yAxis: { type: 'value', minInterval: 1, name: 'Seleções' },
-    series: [{ type: 'bar', barMaxWidth: 42, data: registros.slice(0,10).map((r) => selecoesDaEscuta(r)), itemStyle: { borderRadius: [7,7,0,0] } }],
-  })
-
-  const graficoFinalAreas: EChartsOption = useMemo(() => {
-    const areas = AREAS.map((a) => a.nome)
-    return {
-      color: [CORES_IDENTIDADE.turquesa, CORES_IDENTIDADE.vermelho],
-      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-      legend: { bottom: 0 },
-      grid: { left: 12, right: 28, top: 18, bottom: 42, containLabel: true },
-      xAxis: { type: 'value', minInterval: 1, name: 'Itens finais' },
-      yAxis: {
-        type: 'category',
-        inverse: true,
-        data: AREAS.map((a) => a.nome),
-        axisLabel: { interval: 0, width: 270, overflow: 'break', lineHeight: 15, fontSize: 11 },
+  const graficoComposicaoFinal: EChartsOption = {
+    tooltip: {
+      trigger: 'item',
+      formatter: '{b}<br/>{c} item(ns) · {d}%',
+    },
+    legend: {
+      bottom: 0,
+      data: ['Ativos', 'Passivos'],
+      textStyle: { color: CORES_IDENTIDADE.cinza, fontWeight: 700 },
+    },
+    title: {
+      text: String(consolidadoFiltrado.length),
+      subtext: 'itens finais',
+      left: '50%',
+      top: '38%',
+      textAlign: 'center',
+      itemGap: 2,
+      textStyle: { color: CORES_IDENTIDADE.cinza, fontSize: 31, fontWeight: 800 },
+      subtextStyle: { color: '#7b8187', fontSize: 11, fontWeight: 700 },
+    },
+    series: [
+      {
+        name: 'Tipo',
+        type: 'pie',
+        radius: ['28%', '43%'],
+        label: { show: false },
+        labelLine: { show: false },
+        data: [
+          { name: 'Ativos', value: ativosConsolidados.length, itemStyle: { color: CORES_IDENTIDADE.turquesa } },
+          { name: 'Passivos', value: passivosConsolidados.length, itemStyle: { color: CORES_IDENTIDADE.vermelho } },
+        ],
       },
-      series: [
-        { name: 'Ativos', type: 'bar', stack: 'tipo', barMaxWidth: 30, data: areas.map((a) => propostaFinal.filter((r) => texto(r['Área de resultado']) === a && texto(r.Tipo) === 'Ativo').length), itemStyle: { borderRadius: [6,0,0,6] } },
-        { name: 'Passivos', type: 'bar', stack: 'tipo', barMaxWidth: 30, data: areas.map((a) => propostaFinal.filter((r) => texto(r['Área de resultado']) === a && texto(r.Tipo) === 'Passivo').length), itemStyle: { borderRadius: [0,6,6,0] } },
-      ],
-    }
-  }, [propostaFinal])
-
-  const graficoConsolidado: EChartsOption = useMemo(() => ({
-    color: AREAS.map((a) => a.cor), tooltip: { trigger: 'item' }, legend: { bottom: 0 },
-    series: [{ type: 'pie', radius: ['50%','76%'], label: { formatter: '{b}: {c}' }, data: AREAS.map((a) => ({ name: a.nomeCurto, value: consolidado.filter((r) => texto(r['Área de resultado']) === a.nome).length })) }],
-  }), [consolidado])
-
-  const topAtivosFinal = useMemo(() => propostaFinal.filter((r) => texto(r.Tipo) === 'Ativo').sort((a,b) => numero(b['Score final (0–100)']) - numero(a['Score final (0–100)'])).slice(0,7), [propostaFinal])
-  const topPassivosFinal = useMemo(() => propostaFinal.filter((r) => texto(r.Tipo) === 'Passivo').sort((a,b) => numero(b['Score final (0–100)']) - numero(a['Score final (0–100)'])).slice(0,7), [propostaFinal])
-
-  function graficoTopFinal(registros: Registro[], tipoGrafico: 'Ativos' | 'Passivos'): EChartsOption {
-    return {
-      color: [tipoGrafico === 'Ativos' ? CORES_IDENTIDADE.turquesa : CORES_IDENTIDADE.vermelho],
-      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-      grid: { left: 8, right: 28, top: 12, bottom: 26, containLabel: true },
-      xAxis: { type: 'value', min: 0, max: 100, name: 'Score-base' },
-      yAxis: { type: 'category', inverse: true, data: registros.map((r) => texto(r['Tema, ativo ou passivo'])), axisLabel: { width: 180, overflow: 'truncate' } },
-      series: [{ type: 'bar', barMaxWidth: 24, data: registros.map((r) => numero(r['Score final (0–100)'])), itemStyle: { borderRadius: [0,6,6,0] }, label: { show: true, position: 'right', formatter: '{c}' } }],
-    }
+      {
+        name: 'Área de resultado',
+        type: 'pie',
+        radius: ['52%', '76%'],
+        minShowLabelAngle: 2,
+        avoidLabelOverlap: true,
+        label: {
+          formatter: '{b}\n{c}',
+          color: CORES_IDENTIDADE.cinza,
+          fontSize: 10,
+          fontWeight: 700,
+          lineHeight: 14,
+        },
+        labelLine: { length: 10, length2: 8 },
+        data: distribuicaoFinalPorArea.flatMap((config) => [
+          ...(config.ativos > 0
+            ? [{
+              name: `${config.nomeCurto} · Ativos`,
+              value: config.ativos,
+              itemStyle: { color: config.cor },
+            }]
+            : []),
+          ...(config.passivos > 0
+            ? [{
+              name: `${config.nomeCurto} · Passivos`,
+              value: config.passivos,
+              itemStyle: { color: corComOpacidade(config.cor, 0.48) },
+            }]
+            : []),
+        ]),
+      },
+    ],
   }
 
   if (erro) return <main className="estado"><h1>Painel indisponível</h1><p>{erro}</p></main>
-  if (!sintese || !referencias || !metadados) return <main className="estado"><p>Carregando dados da matriz…</p></main>
+  if (!metadados) return <main className="estado"><p>Carregando dados da matriz…</p></main>
 
   const dataGeracao = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium' }).format(new Date(metadados.geradoEm))
-  const finalResumo = metadados.propostaFinalResumo
-  const consolidadoResumo = metadados.rankingConsolidadoResumo
-  const maiorAreaFinal = AREAS.map((a) => ({ area: a, total: propostaFinal.filter((r) => texto(r['Área de resultado']) === a.nome).length })).sort((a,b) => b.total-a.total)[0]
-  const socialFinal = propostaFinal.filter((r) => texto(r['Área de resultado']) === AREAS[3].nome)
-  const socialPassivos = socialFinal.filter((r) => texto(r.Tipo) === 'Passivo').length
-  const socialAtivos = socialFinal.filter((r) => texto(r.Tipo) === 'Ativo').length
-
-  const colunasCsv = [
-    { rotulo: 'Posição', campo: 'Posição' }, { rotulo: 'Tipo', campo: 'Tipo' }, { rotulo: 'Ativo ou passivo', campo: 'Tema, ativo ou passivo' },
-    { rotulo: 'Área de Resultado', campo: 'Área de resultado' }, { rotulo: 'Score-base', campo: 'Score final (0–100)' }, { rotulo: 'Prioridade', campo: 'Prioridade' },
-    { rotulo: 'Factibilidade', campo: 'Grau de factibilidade' }, { rotulo: 'Tratamento qualitativo', campo: 'Tratamento qualitativo' },
-    { rotulo: 'Desafio(s)', campo: 'Desafio(s) do Plano' }, { rotulo: 'Indicador', campo: 'Indicador do Plano associado' }, { rotulo: 'Fonte', campo: 'Fonte e localização' },
-  ]
+  const registrosDaVisao = visao === 'Ranking Consolidado' ? consolidadoQualitativo : ranking
 
   return (
     <main className="painel">
       <header className="cabecalho">
         <div className="cabecalho-conteudo">
           <div className="marca">
-            <span className="marca-simbolo" aria-hidden="true"><i /><i /><i /></span>
+            <span className="marca-simbolo" aria-hidden="true">
+              <i />
+              <i />
+              <i />
+            </span>
             <div>
               <p className="sobretitulo">PLANO MARANHÃO 2050</p>
-              <h1>Revisão de Ativos e Passivos</h1>
-              <p className="subtitulo">Síntese técnica, escuta, consolidação e Proposta Final · Base atualizada em {dataGeracao}</p>
+              <h1>Contribuições, prioridades e lacunas</h1>
+              <p className="subtitulo">
+                Revisão e priorização estratégica · Base atualizada em {dataGeracao}
+              </p>
             </div>
           </div>
+
           <div className="cabecalho-meta">
-            <figure className="identidade-plano"><img src={`${import.meta.env.BASE_URL}identidade-plano-maranhao-2050.png`} alt="Identidade visual do Plano Maranhão 2050" /></figure>
-            <strong className="selo-base">{metadados.registros.propostaFinal}</strong>
-            <span className="selo-legenda">itens na proposta final</span>
+            <figure className="identidade-plano">
+              <img
+                src={`${import.meta.env.BASE_URL}identidade-plano-maranhao-2050.png`}
+                alt="Identidade visual do Plano Estratégico de Longo Prazo Maranhão 2050"
+              />
+            </figure>
+            <strong className="selo-base">{metadados.registros.rankingIntegrado}</strong>
+            <span className="selo-legenda">registros integrados</span>
           </div>
         </div>
-        <div className="faixa-identidade" aria-hidden="true"><span /><span /><span /><span /><span /></div>
+
+        <div className="faixa-identidade" aria-hidden="true">
+          <span />
+          <span />
+          <span />
+          <span />
+          <span />
+        </div>
       </header>
 
-      <nav className="navegacao navegacao--final" aria-label="Seções do painel">
+      <nav className="navegacao" aria-label="Seções do painel">
         {VISOES.map((item) => (
-          <button key={item} className={`${visao === item ? 'ativo' : ''} ${item === 'Proposta Final' ? 'nav-prioritaria' : ''}`} onClick={() => setVisao(item)}>
-            {item}{item === 'Proposta Final' && <span className="badge-final-nav">FINAL</span>}
+          <button
+            key={item}
+            className={visao === item ? 'ativo' : ''}
+            onClick={() => setVisao(item)}
+          >
+            {item}
           </button>
         ))}
       </nav>
 
-      {visao === 'Síntese' && (
-        <>
-          <section className="titulo-secao">
-            <div><span className="etiqueta">SÍNTESE</span><h2>Como a Proposta Final foi construída</h2></div>
-            <p>{sintese.descricao}</p>
-          </section>
+      <section className="areas-resultado" aria-label="Áreas de Resultado do Plano Maranhão 2050">
+        {areas.map((item) => {
+          const config = configArea(item)
+          const selecionada = area === item
+          return (
+            <button
+              type="button"
+              key={item}
+              className={`area-card ${selecionada ? 'selecionada' : ''}`}
+              style={{ borderTopColor: config.cor }}
+              onClick={() => setArea(selecionada ? 'Todas' : item)}
+              title={`Filtrar por ${config.nome}`}
+            >
+              <span className="area-card-cor" style={{ backgroundColor: config.cor }} />
+              <strong>{config.nome}</strong>
+              <span>
+                {registrosDaVisao.filter((registro) => texto(registro['Área de resultado']) === item).length}
+                {' '}{visao === 'Ranking Consolidado' ? 'itens finais' : 'registros'}
+              </span>
+            </button>
+          )
+        })}
+      </section>
 
-          <section className="cartao">
-            <div className="cartao-titulo"><span className="barra-titulo barra-titulo--vermelho" /><div><h2>1. Metodologia em sete fases</h2><p>Do recebimento das evidências à seleção final pós-GT, com rastreabilidade entre as etapas.</p></div></div>
-            <div className="metodo-fluxo">{sintese.fases.map((fase) => <article key={fase.fase} className={`fase-card ${fase.fase === 7 ? 'fase-card--final' : ''}`}><span className="fase-numero">{fase.fase}</span><div><h3>{fase.titulo}</h3><p>{fase.descricao}</p><small>{fase.base}</small></div></article>)}</div>
-          </section>
+      <section className="filtros" aria-label="Filtros do ranking">
+        <label>
+          Área de Resultado
+          <select value={area} onChange={(evento) => setArea(evento.target.value)}>
+            <option value="Todas">Todas as áreas</option>
+            {areas.map((item) => <option key={item} value={item}>{nomeArea(item)}</option>)}
+          </select>
+        </label>
 
-          <section className="grade-graficos grade-metodo">
-            <article className="cartao">
-              <div className="cartao-titulo"><span className="barra-titulo barra-titulo--amarelo" /><div><h2>2. Critérios do Ranking Integrado</h2><p>Pesos aplicados à etapa quantitativa intermediária.</p></div></div>
-              <div className="pesos">{sintese.criteriosRanking.map((criterio, indice) => <article key={texto(criterio.Critério)} style={{ borderTopColor: [CORES_IDENTIDADE.vermelho,CORES_IDENTIDADE.turquesa,CORES_IDENTIDADE.amarelo,CORES_IDENTIDADE.laranja][indice] }}><strong>{Math.round(numero(criterio.Peso)*100)}%</strong><span>{texto(criterio.Critério)}</span><small>{texto(criterio.Regra)}</small></article>)}</div>
-            </article>
-            <article className="cartao">
-              <div className="cartao-titulo"><span className="barra-titulo barra-titulo--laranja" /><div><h2>Classificação das contribuições</h2><p>A natureza do item orienta a leitura, mas não altera automaticamente a pontuação.</p></div></div>
-              <div className="classificacoes-grid">{sintese.classificacoes.map((item) => <article key={texto(item.Tipo)}><strong>{texto(item.Tipo)}</strong><p>{texto(item.Definição)}</p></article>)}</div>
-            </article>
-          </section>
+        <label>
+          Tipo
+          <select value={tipo} onChange={(evento) => setTipo(evento.target.value)}>
+            <option value="Todos">Todos</option>
+            {tipos.map((item) => <option key={item}>{item}</option>)}
+          </select>
+        </label>
 
-          <section className="cartao">
-            <div className="cartao-titulo"><span className="barra-titulo barra-titulo--turquesa" /><div><h2>3. Cobertura das contribuições institucionais</h2><p>Resumo dos documentos recebidos e sua incidência nas cinco Áreas de Resultado.</p></div></div>
-            <div className="tabela-wrap cobertura-matriz"><table><thead><tr><th>Entidade</th><th>Documentos sistematizados</th>{AREAS.map((a) => <th key={a.nome}>{a.nome}</th>)}</tr></thead><tbody>
-              {sintese.entidades.map((entidade) => <tr key={texto(entidade.Entidade)}><td><strong>{texto(entidade.Entidade)}</strong></td><td className="documentos-entidade">{texto(entidade.Documentos)}</td>{AREAS.map((a) => <td key={a.nome}><span className={statusCobertura(entidade[a.nome])}>{texto(entidade[a.nome])}</span></td>)}</tr>)}
-            </tbody></table></div>
-          </section>
+        <label>
+          Origem
+          <select value={origem} onChange={(evento) => setOrigem(evento.target.value)}>
+            <option value="Todas">Todas</option>
+            {origens.map((item) => <option key={item}>{item}</option>)}
+          </select>
+        </label>
 
-          <section className="titulo-secao titulo-secao--interno">
-            <div><span className="etiqueta">4. CONTRIBUIÇÕES</span><h2>Quem contribuiu e como a proposta foi construída</h2></div>
-            <p>A síntese numérica permite acompanhar a passagem da documentação recebida até o conjunto final pós-GT.</p>
-          </section>
-          <section className="cards cards--seis">
-            <article className="card-kpi card-kpi--turquesa"><span>Entidades com documentos</span><strong>{metadados.registros.entidades}</strong></article>
-            <article className="card-kpi card-kpi--amarelo"><span>Áreas de Resultado</span><strong>5</strong></article>
-            <article className="card-kpi card-kpi--laranja"><span>Desafios estratégicos</span><strong>{metadados.registros.desafios}</strong></article>
-            <article className="card-kpi card-kpi--turquesa"><span>Registros integrados</span><strong>{metadados.registros.rankingIntegrado}</strong></article>
-            <article className="card-kpi card-kpi--vermelho"><span>Ranking consolidado</span><strong>{metadados.registros.rankingConsolidado}</strong></article>
-            <article className="card-kpi card-kpi--destaque"><span>Proposta Final</span><strong>{metadados.registros.propostaFinal}</strong></article>
-          </section>
-          <aside className="aviso"><strong>Nota metodológica.</strong> {sintese.notaMetodologica}</aside>
-        </>
-      )}
+        <label className="busca">
+          Buscar tema
+          <input
+            value={busca}
+            onChange={(evento) => setBusca(evento.target.value)}
+            placeholder="Ex.: logística, saúde, turismo"
+          />
+        </label>
+      </section>
 
-      {visao === 'Referências do Plano' && (
-        <>
-          <section className="titulo-secao"><div><span className="etiqueta">REFERÊNCIAS DO PLANO</span><h2>Universo lógico e vinculações utilizadas na análise</h2></div><p>As evidências foram vinculadas às Áreas de Resultado, aos 22 desafios e aos indicadores de apoio e monitoramento.</p></section>
-          <section className="referencia-fluxo"><div className="fluxo-no">5 Áreas de Resultado</div><span>→</span><div className="fluxo-no">22 Desafios Estratégicos</div><span>→</span><div className="fluxo-no">30 Indicadores de monitoramento</div><span>→</span><div className="fluxo-no fluxo-no--final">Evidências e priorização</div></section>
-          <section className="filtros filtros--referencias"><label>Área de Resultado<select value={areaReferencia} onChange={(e) => setAreaReferencia(e.target.value)}><option value="Todas">Todas as áreas</option>{AREAS.map((a) => <option key={a.nome}>{a.nome}</option>)}</select></label><label>Buscar desafio ou indicador<input value={buscaReferencia} onChange={(e) => setBuscaReferencia(e.target.value)} placeholder="Ex.: saneamento, inovação, educação" /></label></section>
-          <section className="cartao"><div className="cartao-titulo"><span className="barra-titulo barra-titulo--turquesa" /><div><h2>Desafios estratégicos e indicador principal de apoio</h2><p>{desafiosFiltrados.length} desafio(s) no recorte atual.</p></div></div><div className="desafios-grid">{desafiosFiltrados.map((desafio) => <article className="desafio-card" key={texto(desafio['Nº'])}><span className="desafio-numero" style={{ backgroundColor: corArea(desafio['Área de resultado']) }}>{texto(desafio['Nº'])}</span><div><AreaBadge valor={desafio['Área de resultado']} /><h3>{texto(desafio['Desafio estratégico'])}</h3><p><b>Indicador principal:</b> {texto(desafio['Indicador principal de apoio'])}</p><small>{texto(desafio.Fonte)}</small></div></article>)}</div></section>
-          <section className="cartao"><div className="cartao-titulo"><span className="barra-titulo barra-titulo--amarelo" /><div><h2>Indicadores de monitoramento usados na vinculação temática</h2><p>{indicadoresFiltrados.length} indicador(es) no recorte atual.</p></div></div><div className="tabela-wrap"><table><thead><tr><th>Área de Resultado</th><th>Indicador</th><th>Último valor</th><th>Ano</th><th>Uso na matriz</th></tr></thead><tbody>{indicadoresFiltrados.map((r) => <tr key={`${texto(r['Área de resultado'])}-${texto(r.Indicador)}`}><td><AreaBadge valor={r['Área de resultado']} /></td><td><strong>{texto(r.Indicador)}</strong></td><td>{texto(r['Último valor disponível'])}</td><td>{texto(r.Ano)}</td><td>{texto(r['Uso na matriz'])}</td></tr>)}</tbody></table></div></section>
-        </>
-      )}
+      {visao === 'Resumo' && <>
+        <section className="titulo-secao">
+          <div>
+            <span className="etiqueta">VISÃO GERAL</span>
+            <h2>Panorama do recorte selecionado</h2>
+          </div>
+          <p>Leitura sintética da composição da base e das prioridades mais bem posicionadas.</p>
+        </section>
 
-      {visao === 'Escuta Técnica' && (
-        <>
-          <section className="titulo-secao"><div><span className="etiqueta">ESCUTA TÉCNICA</span><h2>Resultados do formulário e contribuições das Câmaras Técnicas</h2></div><p>A frequência de seleção define a priorização dos itens predefinidos; contribuições livres permanecem registradas separadamente.</p></section>
-          <section className="cards"><article className="card-kpi card-kpi--turquesa"><span>Respostas válidas</span><strong>{participantesEscuta}</strong></article><article className="card-kpi card-kpi--amarelo"><span>Ativos com seleção</span><strong>{escuta.filter((r) => texto(r.Tipo)==='Ativo' && selecoesDaEscuta(r)>0).length}</strong></article><article className="card-kpi card-kpi--vermelho"><span>Passivos com seleção</span><strong>{escuta.filter((r) => texto(r.Tipo)==='Passivo' && selecoesDaEscuta(r)>0).length}</strong></article><article className="card-kpi card-kpi--laranja"><span>Contribuições adicionais</span><strong>{escuta.filter((r) => texto(r['Prioridade na escuta']).includes('Sem avaliação numérica')).length}</strong></article></section>
-          <Filtros area={area} setArea={setArea} tipo={tipo} setTipo={setTipo} busca={busca} setBusca={setBusca} />
-          <section className="grade-graficos"><article className="cartao"><div className="cartao-titulo"><span className="barra-titulo barra-titulo--turquesa" /><div><h2>Ativos mais selecionados</h2><p>Número de participantes que selecionaram o ativo entre as prioridades.</p></div></div><ReactECharts option={opcoesGraficoEscuta(ativosEscuta,'Ativos')} style={{height:390}} /></article><article className="cartao"><div className="cartao-titulo"><span className="barra-titulo barra-titulo--vermelho" /><div><h2>Passivos mais selecionados</h2><p>Número de participantes que selecionaram o passivo entre as prioridades.</p></div></div><ReactECharts option={opcoesGraficoEscuta(passivosEscuta,'Passivos')} style={{height:390}} /></article></section>
-          <section className="cartao"><div className="cartao-titulo"><span className="barra-titulo barra-titulo--turquesa" /><div><h2>Itens priorizados na escuta</h2><p>Seleções, avaliação técnica declarada e vínculo analítico ao Plano.</p></div></div><div className="tabela-wrap"><table><thead><tr><th>Tipo</th><th>Tema</th><th>Área de Resultado</th><th>Seleções</th><th>Potencial / gravidade</th><th>Urgência</th><th>Desafio relacionado</th></tr></thead><tbody>{[...ativosEscuta,...passivosEscuta].sort((a,b)=>selecoesDaEscuta(b)-selecoesDaEscuta(a)).map((r) => { const tipoItem=texto(r.Tipo); const metrica=tipoItem==='Ativo'?'Potencial médio':'Gravidade média'; return <tr key={texto(r['Nº'])}><td><span className={classeTipo(tipoItem)}>{tipoItem}</span></td><td className="tema"><strong>{texto(r['Tema, ativo ou passivo identificado'])}</strong><details><summary>Ver evidência</summary><p>{texto(r['Evidência da escuta'])}</p><p><b>Fonte:</b> {texto(r['Fonte e localização'])}</p></details></td><td><AreaBadge valor={r['Área de resultado']} /></td><td className="dados-escuta"><span className="score">{selecoesDaEscuta(r)}/{participantesEscuta}</span><small>{percentualDaEscuta(r).toFixed(0)}%</small></td><td>{valorMetricaEscuta(r,metrica).toFixed(2)}</td><td>{valorMetricaEscuta(r,'Urgência média').toFixed(2)}</td><td>{texto(r['Desafio do Plano relacionado'])}</td></tr> })}</tbody></table></div></section>
-          <section className="cartao"><div className="cartao-titulo"><span className="barra-titulo barra-titulo--laranja" /><div><h2>Contribuições adicionais das Câmaras Técnicas</h2><p>Novos ativos, passivos, propostas e observações sem avaliação numérica própria.</p></div></div><div className="contribuicoes-grid">{adicionaisEscuta.map((r) => <article className="contribuicao-card" key={texto(r['Nº'])} style={{borderTopColor:corArea(r['Área de resultado'])}}><div className="contribuicao-topo"><span className={classeTipo(r.Tipo)}>{texto(r.Tipo)}</span><AreaBadge valor={r['Área de resultado']} /></div><h3>{texto(r['Tema, ativo ou passivo identificado'])}</h3><p>{texto(r['Evidência da escuta'])}</p><details><summary>Ver vínculo e fonte</summary><p><b>Desafio:</b> {texto(r['Desafio do Plano relacionado'])}</p><p><b>Indicador:</b> {texto(r['Indicador do Plano associado'])}</p><p><b>Fonte:</b> {texto(r['Fonte e localização'])}</p></details></article>)}</div></section>
-        </>
+        <section className="cards">
+          <article className="card-kpi card-kpi--vermelho">
+            <span>Registros no recorte</span>
+            <strong>{filtrados.length}</strong>
+          </article>
+          <article className="card-kpi card-kpi--turquesa">
+            <span>Ativos</span>
+            <strong>{filtrados.filter((r) => texto(r.Tipo) === 'Ativo').length}</strong>
+          </article>
+          <article className="card-kpi card-kpi--laranja">
+            <span>Passivos</span>
+            <strong>{filtrados.filter((r) => texto(r.Tipo) === 'Passivo').length}</strong>
+          </article>
+          <article className="card-kpi card-kpi--amarelo">
+            <span>Propostas</span>
+            <strong>{filtrados.filter((r) => texto(r.Tipo) === 'Proposta').length}</strong>
+          </article>
+        </section>
+
+        <section className="grade-graficos">
+          <article className="cartao">
+            <div className="cartao-titulo">
+              <span className="barra-titulo barra-titulo--turquesa" />
+              <div>
+                <h2>Registros por Área de Resultado</h2>
+                <p>Distribuição do recorte atual entre as cinco áreas estratégicas.</p>
+              </div>
+            </div>
+            <ReactECharts option={graficoArea} style={{ height: 340 }} />
+          </article>
+
+          <article className="cartao">
+            <div className="cartao-titulo">
+              <span className="barra-titulo barra-titulo--vermelho" />
+              <div>
+                <h2>Composição do recorte</h2>
+                <p>Participação de ativos, passivos e propostas na seleção atual.</p>
+              </div>
+            </div>
+            <ReactECharts option={graficoTipo} style={{ height: 340 }} />
+          </article>
+        </section>
+
+        <section className="cartao">
+          <div className="cartao-titulo">
+            <span className="barra-titulo barra-titulo--amarelo" />
+            <div>
+              <h2>Top 10 prioridades do recorte</h2>
+              <p>Dez registros com maior score final após a aplicação dos filtros.</p>
+            </div>
+          </div>
+          <TabelaRanking registros={top10} />
+        </section>
+      </>}
+
+      {visao === 'Ranking' && (
+        <section className="cartao">
+          <div className="cartao-titulo">
+            <span className="barra-titulo barra-titulo--vermelho" />
+            <div>
+              <h2>Ranking integrado</h2>
+              <p>Ordenado pelo score final. Use os filtros para comparar áreas, tipos e entidades.</p>
+            </div>
+          </div>
+
+          <div className="ranking-controles">
+            <div className="ranking-resumo">
+              <span>
+                <strong>{totalRegistrosRanking}</strong> registro(s) encontrado(s)
+              </span>
+              <small>
+                Ordenação: {campoOrdenacao === 'Score final (0–100)' ? 'Score' : campoOrdenacao}
+                {' · '}
+                {direcaoOrdenacao === 'asc' ? 'crescente' : 'decrescente'}
+              </small>
+            </div>
+
+            <div className="ranking-acoes">
+              <button
+                type="button"
+                className="botao-exportar"
+                onClick={() => baixarCsv(rankingOrdenado)}
+                disabled={totalRegistrosRanking === 0}
+              >
+                ↓ Exportar CSV
+              </button>
+
+              <label>
+                Exibir
+                <select
+                  value={itensPorPagina}
+                  onChange={(evento) => setItensPorPagina(Number(evento.target.value))}
+                >
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </select>
+                por página
+              </label>
+            </div>
+          </div>
+
+          <TabelaRanking
+            registros={rankingPaginado}
+            campoOrdenacao={campoOrdenacao}
+            direcaoOrdenacao={direcaoOrdenacao}
+            aoOrdenar={ordenarRanking}
+          />
+
+          <div className="paginacao">
+            <span>
+              Mostrando {totalRegistrosRanking === 0 ? 0 : inicioPagina + 1}–
+              {Math.min(fimPagina, totalRegistrosRanking)} de {totalRegistrosRanking}
+            </span>
+
+            <div className="paginacao-acoes">
+              <button
+                type="button"
+                onClick={() => setPaginaAtual((pagina) => Math.max(1, pagina - 1))}
+                disabled={paginaAtual === 1}
+                aria-label="Página anterior"
+              >
+                ←
+              </button>
+
+              <div className="paginacao-paginas" aria-label="Páginas do ranking">
+                {paginasRanking.map((item, indice) =>
+                  item === '…'
+                    ? <span className="reticencias" key={`reticencias-${indice}`}>…</span>
+                    : (
+                      <button
+                        type="button"
+                        key={item}
+                        className={`pagina-numero ${item === paginaAtual ? 'ativa' : ''}`}
+                        onClick={() => setPaginaAtual(item)}
+                        aria-current={item === paginaAtual ? 'page' : undefined}
+                      >
+                        {item}
+                      </button>
+                    ),
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setPaginaAtual((pagina) => Math.min(totalPaginasRanking, pagina + 1))}
+                disabled={paginaAtual >= totalPaginasRanking}
+                aria-label="Próxima página"
+              >
+                →
+              </button>
+            </div>
+          </div>
+        </section>
       )}
 
       {visao === 'Ranking Consolidado' && (
         <>
-          <section className="titulo-secao"><div><span className="etiqueta">RANKING CONSOLIDADO</span><h2>Consolidação qualitativa dos ativos e passivos</h2></div><p>Etapa de agrupamento, reclassificação e reformulação que reduz a base intermediária para itens comparáveis e rastreáveis.</p></section>
-          <section className="cards cards--cinco"><article className="card-kpi card-kpi--turquesa"><span>Ativos consolidados</span><strong>{texto(consolidadoResumo.ativosConsolidados)}</strong></article><article className="card-kpi card-kpi--vermelho"><span>Passivos consolidados</span><strong>{texto(consolidadoResumo.passivosConsolidados)}</strong></article><article className="card-kpi card-kpi--amarelo"><span>Itens consolidados</span><strong>{metadados.registros.rankingConsolidado}</strong><small className="card-kpi-subinfo"><b>{metadados.registros.rankingIntegrado}</b> propostas/contribuições no universo total</small></article><article className="card-kpi card-kpi--laranja"><span>Grupos agregados</span><strong>{texto(consolidadoResumo.gruposAgregados)}</strong></article><article className="card-kpi card-kpi--vermelho"><span>Registros-base</span><strong>{texto(consolidadoResumo.registrosBase)}</strong></article></section>
-          <Filtros area={area} setArea={setArea} tipo={tipo} setTipo={setTipo} busca={busca} setBusca={setBusca} />
-          <section className="grade-graficos"><article className="cartao"><div className="cartao-titulo"><span className="barra-titulo barra-titulo--turquesa" /><div><h2>Distribuição dos itens consolidados</h2><p>Participação das cinco Áreas de Resultado no conjunto consolidado.</p></div></div><ReactECharts option={graficoConsolidado} style={{height:330}} /></article><article className="cartao cartao-explicativo"><h3>Como ler esta etapa</h3><p>O score-base preserva o maior score final original do grupo. A revisão qualitativa altera seleção, agregação, redação e condicionamentos, mas não cria uma nova pontuação.</p><div className="mini-fluxo"><span>210 registros integrados</span><b>→</b><span>128 registros-base analisados</span><b>→</b><span className="mini-fluxo-final">39 itens consolidados</span></div></article></section>
-          <section className="cartao"><div className="ranking-controles"><div className="ranking-resumo"><span><strong>{consolidadoOrdenado.length}</strong> registro(s) encontrado(s)</span><small>Ordenação interativa pelas colunas da tabela.</small></div><div className="ranking-acoes"><button className="botao-exportar" type="button" onClick={() => baixarCsv(consolidadoOrdenado,'ranking_consolidado_maranhao_2050',colunasCsv)}>↓ Exportar CSV</button><label>Exibir<select value={itensPorPagina} onChange={(e)=>setItensPorPagina(Number(e.target.value))}><option value={10}>10</option><option value={15}>15</option><option value={25}>25</option><option value={50}>50</option></select> por página</label></div></div><TabelaPriorizacao registros={consolidadoPaginado} campoOrdenacao={campoConsolidado} direcao={direcaoConsolidado} aoOrdenar={(c)=>alternarOrdenacao(c,'consolidado')} /><Paginacao pagina={paginaConsolidado} totalPaginas={totalPaginasConsolidado} totalRegistros={consolidadoOrdenado.length} inicio={inicioConsolidado} fim={fimConsolidado} setPagina={setPaginaConsolidado} /></section>
-          <details className="cartao ranking-intermediario"><summary>Consultar base intermediária do Ranking Integrado ({metadados.registros.rankingIntegrado} registros)</summary><p className="texto-apoio">A base intermediária permanece disponível para rastreabilidade e inclui os Subsídios técnicos de cada registro.</p><TabelaIntegrado registros={integradoPaginado} /><Paginacao pagina={paginaIntegrado} totalPaginas={totalPaginasIntegrado} totalRegistros={integradoOrdenado.length} inicio={inicioIntegrado} fim={fimIntegrado} setPagina={setPaginaIntegrado} /></details>
+          <section className="titulo-secao">
+            <div>
+              <span className="etiqueta">SÍNTESE EXECUTIVA DO GT</span>
+              <h2>Lista final de ativos e passivos estratégicos</h2>
+            </div>
+            <p>
+              Síntese técnica requalificada no Grupo de Trabalho com a Superintendente,
+              integrando evidências institucionais, critérios de viabilidade e escuta técnica.
+            </p>
+          </section>
+
+          <section className="cards cards--sintese-final">
+            <article className="card-kpi card-kpi--turquesa">
+              <span>Ativos estratégicos</span>
+              <strong>{ativosConsolidados.length}</strong>
+              <small>{percentual(ativosConsolidados.length, consolidadoFiltrado.length).toFixed(0)}% da lista final</small>
+            </article>
+            <article className="card-kpi card-kpi--vermelho">
+              <span>Passivos críticos</span>
+              <strong>{passivosConsolidados.length}</strong>
+              <small>{percentual(passivosConsolidados.length, consolidadoFiltrado.length).toFixed(0)}% da lista final</small>
+            </article>
+            <article className="card-kpi card-kpi--amarelo">
+              <span>Itens finais do GT</span>
+              <strong>{consolidadoFiltrado.length}</strong>
+              <small>cinco áreas de resultado</small>
+            </article>
+            <article className="card-kpi card-kpi--laranja">
+              <span>Prioridade alta ou muito alta</span>
+              <strong>{totalPrioridadeAltaFinal}</strong>
+              <small>{percentual(totalPrioridadeAltaFinal, consolidadoFiltrado.length).toFixed(0)}% do conjunto final</small>
+            </article>
+          </section>
+
+          <section className="grade-executiva-final">
+            <article className="cartao">
+              <div className="cartao-titulo">
+                <span className="barra-titulo barra-titulo--turquesa" />
+                <div>
+                  <h2>Composição final por área e tipo</h2>
+                  <p>Anel interno: ativos e passivos. Anel externo: distribuição quantitativa nas áreas de resultado.</p>
+                </div>
+              </div>
+              {consolidadoFiltrado.length > 0
+                ? <ReactECharts option={graficoComposicaoFinal} style={{ height: 390 }} />
+                : <p className="escuta-sem-registros">Nenhum item final corresponde aos filtros atuais.</p>}
+            </article>
+
+            <article className="cartao cartao--leitura-final">
+              <div className="cartao-titulo">
+                <span className="barra-titulo barra-titulo--amarelo" />
+                <div>
+                  <h2>Leitura executiva do conjunto</h2>
+                  <p>Principais sinais quantitativos da lista requalificada.</p>
+                </div>
+              </div>
+              <div className="leituras-final">
+                {areaMaisRepresentadaFinal && (
+                  <p className="leitura-final">
+                    <strong>Maior concentração.</strong>{' '}
+                    {areaMaisRepresentadaFinal.nomeCurto} reúne {areaMaisRepresentadaFinal.total} de {consolidadoFiltrado.length} itens
+                    {' '}({percentual(areaMaisRepresentadaFinal.total, consolidadoFiltrado.length).toFixed(0)}%),
+                    com {areaMaisRepresentadaFinal.ativos} ativo(s) e {areaMaisRepresentadaFinal.passivos} passivo(s).
+                  </p>
+                )}
+                {recorteSociedadeFinal && (
+                  <p className="leitura-final">
+                    <strong>Foco de superação.</strong>{' '}
+                    Sociedade concentra {recorteSociedadeFinal.passivos} passivos e nenhum ativo no recorte final,
+                    sinalizando prioridade para enfrentamento de fragilidades sociais estruturais.
+                  </p>
+                )}
+                <p className="leitura-final">
+                  <strong>Grau de prioridade.</strong>{' '}
+                  {totalPrioridadeAltaFinal} dos {consolidadoFiltrado.length} itens estão classificados como alta ou muito alta prioridade;
+                  o score-base médio do conjunto é {scoreMedioFinal.toFixed(1)}.
+                </p>
+                <p className="leitura-final">
+                  <strong>Agenda de validação.</strong>{' '}
+                  {totalComValidacaoFinal} item(ns) mantêm a indicação “validar” na prioridade,
+                  devendo ser tratados como pontos de checagem na pactuação de responsáveis, metas e recursos.
+                </p>
+              </div>
+            </article>
+          </section>
+
+          <section className="cartao cartao--areas-final">
+            <div className="cartao-titulo">
+              <span className="barra-titulo barra-titulo--vermelho" />
+              <div>
+                <h2>Distribuição da lista final nas áreas de resultado</h2>
+                <p>Leitura quantitativa complementar à composição do gráfico, preservando as cores oficiais de cada área.</p>
+              </div>
+            </div>
+            <div className="matriz-areas-final">
+              {distribuicaoFinalPorArea.map((item) => (
+                <article className="area-final" key={item.chave} style={{ borderTopColor: item.cor }}>
+                  <span className="area-final__nome">{item.nomeCurto}</span>
+                  <strong>{item.total}</strong>
+                  <span className="area-final__subtitulo">itens finais</span>
+                  <div className="area-final__dados">
+                    <span><i className="legenda-tipo legenda-tipo--ativo" />{item.ativos} ativo(s)</span>
+                    <span><i className="legenda-tipo legenda-tipo--passivo" />{item.passivos} passivo(s)</span>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section className="titulo-secao titulo-secao--destaques">
+            <div>
+              <span className="etiqueta">DESTAQUES ESTRATÉGICOS</span>
+              <h2>Ativos e passivos em evidência</h2>
+            </div>
+            <p>Leitura visual inspirada na matriz de ativos e fragilidades: os números indicam a posição entre os destaques por score-base.</p>
+          </section>
+
+          <section className="grade-destaques">
+            <MapaDestaques tipo="Ativo" registros={ativosConsolidados} />
+            <MapaDestaques tipo="Passivo" registros={passivosConsolidados} />
+          </section>
+
+          <section className="cartao">
+            <div className="cartao-titulo">
+              <span className="barra-titulo barra-titulo--turquesa" />
+              <div>
+                <h2>Lista final validada no GT</h2>
+                <p>
+                  {consolidadoFiltrado.length} itens, sendo {ativosConsolidados.length} ativos e {passivosConsolidados.length} passivos.
+                  {' '}Use “Ver convergência de evidências” para consultar as contribuições integradas que robustecem cada item.
+                </p>
+              </div>
+            </div>
+            <TabelaRanking
+              registros={consolidadoFiltrado}
+              rotuloScore="Score-base"
+              mostrarConvergenciaDeEvidencias
+            />
+          </section>
+
+          <aside className="aviso">
+            <strong>Leitura metodológica.</strong> A lista final registra a requalificação técnica do GT. Os vínculos, as evidências e os condicionamentos permanecem acessíveis por item; o score-base é uma referência de priorização e não substitui a pactuação posterior de metas, responsáveis e recursos.
+          </aside>
+
+          <details className="evidencia-escuta">
+            <summary>
+              <span>
+                <strong>Base técnica da escuta</strong>
+                <small>Gráficos, eleições e itens priorizados pelas Câmaras Técnicas que subsidiaram a consolidação final.</small>
+              </span>
+              <b aria-hidden="true">⌄</b>
+            </summary>
+
+            <div className="evidencia-escuta__conteudo">
+              <section className="cards cards--escuta">
+                <article className="card-kpi card-kpi--turquesa">
+                  <span>Participantes válidos</span>
+                  <strong>{participantesEscuta}</strong>
+                </article>
+                <article className="card-kpi card-kpi--amarelo">
+                  <span>Ativos priorizados</span>
+                  <strong>{ativosPriorizadosEscuta.length}</strong>
+                </article>
+                <article className="card-kpi card-kpi--vermelho">
+                  <span>Passivos priorizados</span>
+                  <strong>{passivosPriorizadosEscuta.length}</strong>
+                </article>
+                <article className="card-kpi card-kpi--laranja">
+                  <span>Itens com eleição</span>
+                  <strong>{totalPriorizadosEscuta}</strong>
+                </article>
+              </section>
+
+              <section className="grade-graficos">
+                <article className="cartao">
+                  <div className="cartao-titulo">
+                    <span className="barra-titulo barra-titulo--turquesa" />
+                    <div>
+                      <h2>Ativos mais priorizados</h2>
+                      <p>Quantidade de participantes que elegeram cada ativo entre as prioridades.</p>
+                    </div>
+                  </div>
+                  {ativosPriorizadosEscuta.length > 0
+                    ? <ReactECharts option={graficoAtivosEscuta} style={{ height: 390 }} />
+                    : <p className="escuta-sem-registros">Nenhum ativo priorizado no recorte atual.</p>}
+                </article>
+
+                <article className="cartao">
+                  <div className="cartao-titulo">
+                    <span className="barra-titulo barra-titulo--vermelho" />
+                    <div>
+                      <h2>Passivos mais priorizados</h2>
+                      <p>Quantidade de participantes que elegeram cada passivo entre as prioridades.</p>
+                    </div>
+                  </div>
+                  {passivosPriorizadosEscuta.length > 0
+                    ? <ReactECharts option={graficoPassivosEscuta} style={{ height: 390 }} />
+                    : <p className="escuta-sem-registros">Nenhum passivo priorizado no recorte atual.</p>}
+                </article>
+              </section>
+
+              <section className="cartao">
+                <div className="cartao-titulo">
+                  <span className="barra-titulo barra-titulo--turquesa" />
+                  <div>
+                    <h2>Ativos eleitos como prioritários</h2>
+                    <p>Ordenação por número de eleições; os detalhes mantêm a evidência e a vinculação ao Plano.</p>
+                  </div>
+                </div>
+                <TabelaEscuta registros={ativosPriorizadosEscuta} tipo="Ativo" />
+              </section>
+
+              <section className="cartao">
+                <div className="cartao-titulo">
+                  <span className="barra-titulo barra-titulo--vermelho" />
+                  <div>
+                    <h2>Passivos eleitos como prioritários</h2>
+                    <p>Ordenação por número de eleições; gravidade e urgência apoiam a leitura da prioridade.</p>
+                  </div>
+                </div>
+                <TabelaEscuta registros={passivosPriorizadosEscuta} tipo="Passivo" />
+              </section>
+            </div>
+          </details>
         </>
       )}
 
-      {visao === 'Proposta Final' && (
-        <>
-          <section className="hero-proposta">
-            <div><span className="etiqueta etiqueta--final">PROPOSTA FINAL PÓS-GT</span><h2>29 ativos e passivos selecionados para a versão final</h2><p>{texto(finalResumo.nota)}</p></div>
-            <div className="hero-proposta-numero"><strong>{texto(finalResumo.total)}</strong><span>itens finais</span></div>
-          </section>
+      {visao === 'Lacunas' && (
+        <section className="cartao">
+          <div className="cartao-titulo">
+            <span className="barra-titulo barra-titulo--laranja" />
+            <div>
+              <h2>Sistemas de referência para lacunas</h2>
+              <p>Referências de monitoramento e benchmark associadas ao processo de revisão.</p>
+            </div>
+          </div>
 
-          <Filtros area={area} setArea={setArea} tipo={tipo} setTipo={setTipo} busca={busca} setBusca={setBusca} />
-          <section className="cartao cartao--final lista-final-prioritaria">
-            <div className="cartao-titulo"><span className="barra-titulo barra-titulo--vermelho" /><div><h2>Lista final pós-GT</h2><p>Rastreabilidade dos itens finais, com vínculo aos desafios, indicadores, evidências e tratamento qualitativo.</p></div></div>
-            <div className="ranking-controles"><div className="ranking-resumo"><span><strong>{finalOrdenado.length}</strong> item(ns) no recorte</span><small>Ordenação interativa pelas colunas da tabela.</small></div><div className="ranking-acoes"><button className="botao-exportar botao-exportar--final" type="button" onClick={() => baixarCsv(finalOrdenado,'proposta_final_maranhao_2050',colunasCsv)}>↓ Exportar Proposta Final</button><label>Exibir<select value={itensPorPagina} onChange={(e)=>setItensPorPagina(Number(e.target.value))}><option value={10}>10</option><option value={15}>15</option><option value={25}>25</option><option value={50}>50</option></select> por página</label></div></div>
-            <TabelaPriorizacao registros={finalPaginado} campoOrdenacao={campoFinal} direcao={direcaoFinal} aoOrdenar={(c)=>alternarOrdenacao(c,'final')} />
-            <Paginacao pagina={paginaFinal} totalPaginas={totalPaginasFinal} totalRegistros={finalOrdenado.length} inicio={inicioFinal} fim={fimFinal} setPagina={setPaginaFinal} />
-          </section>
-
-          <section className="titulo-secao titulo-secao--interno analises-proposta-final">
-            <div><span className="etiqueta">ANÁLISES</span><h2>Leituras da composição da Proposta Final</h2></div>
-            <p>Os quadros e gráficos abaixo sintetizam a composição do conjunto final sem substituir a lista prioritária acima.</p>
-          </section>
-
-          <section className="cards cards--cinco">
-            <article className="card-kpi card-kpi--turquesa"><span>Ativos estratégicos</span><strong>{texto(finalResumo.ativos)}</strong></article>
-            <article className="card-kpi card-kpi--vermelho"><span>Passivos críticos</span><strong>{texto(finalResumo.passivos)}</strong></article>
-            <article className="card-kpi card-kpi--destaque"><span>Itens da versão final</span><strong>{texto(finalResumo.total)}</strong></article>
-            <article className="card-kpi card-kpi--amarelo"><span>Prioridade alta ou muito alta</span><strong>{texto(finalResumo.altaOuMuitoAlta)}</strong></article>
-            <article className="card-kpi card-kpi--laranja"><span>Prioridade média</span><strong>{propostaFinal.filter((r) => normalizar(prioridadePublica(r.Prioridade)) === 'media').length}</strong></article>
-          </section>
-
-          <section className="leituras-executivas"><article><strong>{Math.round(numero(finalResumo.passivos)/Math.max(1,numero(finalResumo.total))*100)}%</strong><span>do conjunto final é composto por passivos, refletindo o foco de superação de gargalos estruturais.</span></article><article><strong>{maiorAreaFinal?.total ?? 0}</strong><span>itens estão em {maiorAreaFinal?.area.nome}, maior concentração da proposta final.</span></article><article><strong>{socialPassivos}</strong><span>passivos e {socialAtivos} ativos estão em Sociedade Saudável, Segura e Justa.</span></article></section>
-
-          <section className="grade-graficos"><article className="cartao"><div className="cartao-titulo"><span className="barra-titulo barra-titulo--vermelho" /><div><h2>Ativos e passivos por Área de Resultado</h2><p>Distribuição dos 29 itens da Proposta Final com o nome completo das cinco Áreas de Resultado.</p></div></div><ReactECharts option={graficoFinalAreas} style={{height:420}} /></article><article className="cartao"><div className="cartao-titulo"><span className="barra-titulo barra-titulo--turquesa" /><div><h2>Leitura da composição final</h2><p>O conjunto combina capacidades a potencializar e fragilidades prioritárias a superar.</p></div></div><div className="composicao-final"><div><strong>{texto(finalResumo.ativos)}</strong><span>Ativos</span></div><div><strong>{texto(finalResumo.passivos)}</strong><span>Passivos</span></div></div><p className="texto-apoio">A Proposta Final é o resultado da rodada de trabalho do GT e constitui a etapa principal do painel.</p></article></section>
-
-          <section className="grade-graficos"><article className="cartao"><div className="cartao-titulo"><span className="barra-titulo barra-titulo--turquesa" /><div><h2>Ativos de maior score-base</h2><p>Sete ativos com maior score-base na versão final.</p></div></div><ReactECharts option={graficoTopFinal(topAtivosFinal,'Ativos')} style={{height:380}} /></article><article className="cartao"><div className="cartao-titulo"><span className="barra-titulo barra-titulo--vermelho" /><div><h2>Passivos de maior score-base</h2><p>Sete passivos com maior score-base na versão final.</p></div></div><ReactECharts option={graficoTopFinal(topPassivosFinal,'Passivos')} style={{height:380}} /></article></section>
-          <aside className="aviso aviso--final"><strong>Leitura principal do painel.</strong> A Proposta Final é a etapa de síntese pós-GT. Os rankings anteriores permanecem como bases de rastreabilidade da construção metodológica.</aside>
-        </>
+          <div className="tabela-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Estado</th>
+                  <th>Sistema / painel</th>
+                  <th>Instituição</th>
+                  <th>Lacunas atendidas</th>
+                  <th>Aplicação</th>
+                </tr>
+              </thead>
+              <tbody>
+                {lacunas.map((registro) => (
+                  <tr key={texto(registro['Sistema / painel'])}>
+                    <td>{texto(registro.Estado)}</td>
+                    <td><strong>{texto(registro['Sistema / painel'])}</strong></td>
+                    <td>{texto(registro['Instituição responsável'])}</td>
+                    <td>{texto(registro['Lacunas atendidas'])}</td>
+                    <td>{texto(registro['Aplicação no DataIMESC / Maranhão 2050'])}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
       )}
 
-      <footer className="rodape"><span>Plano Maranhão 2050</span><span>Revisão de Ativos e Passivos · sistematização, escuta, consolidação e Proposta Final</span></footer>
+      {visao === 'Método' && (
+        <section className="cartao">
+          <div className="cartao-titulo">
+            <span className="barra-titulo barra-titulo--amarelo" />
+            <div>
+              <h2>Como o ranking é calculado</h2>
+              <p>Composição dos quatro componentes que formam o score integrado.</p>
+            </div>
+          </div>
+
+          <div className="pesos">
+            <article style={{ borderTopColor: CORES_IDENTIDADE.vermelho }}>
+              <strong>40%</strong>
+              <span>Adesão aos desafios e maturidade de monitoramento</span>
+            </article>
+            <article style={{ borderTopColor: CORES_IDENTIDADE.turquesa }}>
+              <strong>25%</strong>
+              <span>Votação e contribuição da escuta</span>
+            </article>
+            <article style={{ borderTopColor: CORES_IDENTIDADE.amarelo }}>
+              <strong>20%</strong>
+              <span>Qualidade das informações</span>
+            </article>
+            <article style={{ borderTopColor: CORES_IDENTIDADE.laranja }}>
+              <strong>15%</strong>
+              <span>Factibilidade fiscal orientativa</span>
+            </article>
+          </div>
+
+          <aside className="aviso">
+            <strong>Leitura necessária.</strong>{' '}
+            {metadados.metodologia?.nota
+              ?? 'A referência da SEFAZ orienta a leitura fiscal por área. Não substitui orçamento, EVTEA ou análise setorial.'}
+          </aside>
+        </section>
+      )}
+
+      <footer className="rodape">
+        <span>Plano Maranhão 2050</span>
+        <span>Monitoramento · revisão · priorização estratégica</span>
+      </footer>
     </main>
   )
 }
