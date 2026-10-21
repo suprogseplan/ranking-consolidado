@@ -24,7 +24,7 @@ type Metadados = {
   }
 }
 
-type Visao = 'Resumo' | 'Ranking' | 'Ranking Consolidado' | 'Lacunas' | 'Método'
+type Visao = 'Proposta Final' | 'Síntese' | 'Escuta Técnica' | 'Ranking Consolidado' | 'Referências do Plano'
 
 type AreaConfig = {
   chave: string
@@ -81,7 +81,23 @@ const AREAS: AreaConfig[] = [
   },
 ]
 
-const VISOES: Visao[] = ['Ranking Consolidado', 'Resumo', 'Ranking', 'Lacunas', 'Método']
+const VISOES: Visao[] = [
+  'Proposta Final',
+  'Síntese',
+  'Escuta Técnica',
+  'Ranking Consolidado',
+  'Referências do Plano',
+]
+
+const ETAPAS_METODOLOGIA = [
+  ['01', 'Mobilização institucional', 'Recebimento de documentos, diagnósticos, projetos, diretrizes e contribuições das entidades participantes.'],
+  ['02', 'Leitura de evidências', 'Identificação de ativos, passivos, propostas e evidências relevantes em cada documento encaminhado.'],
+  ['03', 'Classificação temática', 'Vinculação das contribuições às cinco Áreas de Resultado do Plano Maranhão 2050.'],
+  ['04', 'Vínculo com o Plano', 'Associação lógica aos desafios e indicadores estratégicos que orientam a revisão de longo prazo.'],
+  ['05', 'Escuta técnica', 'Priorização pelos membros das Câmaras Técnicas e incorporação das informações qualitativas recebidas.'],
+  ['06', 'Qualificação e viabilidade', 'Análise de robustez das evidências, aderência aos desafios e factibilidade fiscal orientativa.'],
+  ['07', 'Consolidação no GT', 'Requalificação da lista, validação técnica e organização da Proposta Final de ativos e passivos.'],
+] as const
 
 function texto(valor: unknown) {
   return String(valor ?? '').trim()
@@ -147,8 +163,17 @@ function ePrioridadeAlta(valor: unknown) {
   return prioridade.startsWith('alta') || prioridade.includes('muito alta')
 }
 
-function requerValidacao(valor: unknown) {
-  return normalizar(texto(valor)).includes('validar')
+function prioridadeExibida(valor: unknown) {
+  return texto(valor).replace(/\s*\(validar\)\s*/gi, '').trim()
+}
+
+function quebraNomeAreaParaGrafico(valor: string) {
+  return valor
+    .replace('Educação, Identidade e Cultura Transformadoras e Estruturantes', 'Educação, Identidade e Cultura\nTransformadoras e Estruturantes')
+    .replace('Economia Próspera e Inclusiva', 'Economia Próspera\ne Inclusiva')
+    .replace('Meio Ambiente Valorizado e Resiliente', 'Meio Ambiente\nValorizado e Resiliente')
+    .replace('Sociedade Saudável, Segura e Justa', 'Sociedade Saudável,\nSegura e Justa')
+    .replace('Governança Efetiva, Conectada e Inovadora', 'Governança Efetiva,\nConectada e Inovadora')
 }
 
 function arquivoPublico(nome: string) {
@@ -350,7 +375,7 @@ function TabelaRanking({
   aoOrdenar,
   rotuloScore = 'Score',
   mostrarConvergenciaDeEvidencias = false,
-  numeracaoSequencial = false,
+  normalizarPrioridade = false,
 }: {
   registros: Registro[]
   campoOrdenacao?: CampoOrdenacao
@@ -358,7 +383,7 @@ function TabelaRanking({
   aoOrdenar?: (campo: CampoOrdenacao) => void
   rotuloScore?: string
   mostrarConvergenciaDeEvidencias?: boolean
-  numeracaoSequencial?: boolean
+  normalizarPrioridade?: boolean
 }) {
   function cabecalho(rotulo: string, campo: CampoOrdenacao) {
     if (!aoOrdenar) return <th>{rotulo}</th>
@@ -390,7 +415,7 @@ function TabelaRanking({
       <table>
         <thead>
           <tr>
-            {cabecalho(numeracaoSequencial ? 'Nº' : 'Pos.', 'Posição')}
+            {cabecalho('Pos.', 'Posição')}
             {cabecalho('Tema / ativo / passivo', 'Tema, ativo ou passivo')}
             {cabecalho('Área de Resultado', 'Área de resultado')}
             {cabecalho('Tipo', 'Tipo')}
@@ -401,16 +426,13 @@ function TabelaRanking({
           </tr>
         </thead>
         <tbody>
-          {registros.map((registro, indice) => (
+          {registros.map((registro) => (
             <tr key={`${texto(registro['Posição'])}-${texto(registro['Tema, ativo ou passivo'])}`}>
-              <td className="posicao">{numeracaoSequencial ? indice + 1 : texto(registro['Posição'])}</td>
+              <td className="posicao">{texto(registro['Posição'])}</td>
               <td className="tema">
                 <strong>{texto(registro['Tema, ativo ou passivo'])}</strong>
                 <details>
                   <summary>Ver evidência e vínculo</summary>
-                  {numeracaoSequencial && (
-                    <p><b>Posição de referência:</b> {texto(registro['Posição']) || 'Não informado'}</p>
-                  )}
                   <p><b>Desafio:</b> {texto(registro['Desafio(s) do Plano']) || 'Não informado'}</p>
                   <p><b>Indicador:</b> {texto(registro['Indicador do Plano associado']) || 'Não informado'}</p>
                   <p><b>Fonte:</b> {texto(registro['Fonte e localização']) || 'Não informado'}</p>
@@ -445,7 +467,7 @@ function TabelaRanking({
               <td><span className={classeTipo(registro.Tipo)}>{texto(registro.Tipo)}</span></td>
               {!mostrarConvergenciaDeEvidencias && <td>{texto(registro.Origem)}</td>}
               <td><span className="score">{numero(registro['Score final (0–100)']).toFixed(1)}</span></td>
-              <td>{texto(registro.Prioridade)}</td>
+              <td>{normalizarPrioridade ? prioridadeExibida(registro.Prioridade) : texto(registro.Prioridade)}</td>
               <td>
                 <span className={rotuloFactibilidade(texto(registro['Grau de factibilidade']))}>
                   {texto(registro['Grau de factibilidade'])}
@@ -607,7 +629,7 @@ function App() {
   const [escuta, setEscuta] = useState<Registro[]>([])
   const [lacunas, setLacunas] = useState<Registro[]>([])
   const [metadados, setMetadados] = useState<Metadados | null>(null)
-  const [visao, setVisao] = useState<Visao>('Ranking Consolidado')
+  const [visao, setVisao] = useState<Visao>('Proposta Final')
   const [area, setArea] = useState('Todas')
   const [tipo, setTipo] = useState('Todos')
   const [origem, setOrigem] = useState('Todas')
@@ -653,6 +675,16 @@ function App() {
     [ranking],
   )
 
+  const coberturaPorOrigem = useMemo(() => Object.entries(contar(ranking, 'Origem'))
+    .sort(([origemA, totalA], [origemB, totalB]) =>
+      Number(totalB) - Number(totalA) || origemA.localeCompare(origemB, 'pt-BR'),
+    ), [ranking])
+
+  const entidadesInstitucionais = useMemo(
+    () => coberturaPorOrigem.filter(([origem]) => origem !== 'Escuta Técnica'),
+    [coberturaPorOrigem],
+  )
+
   const filtrados = useMemo(() => ranking
     .filter((registro) => correspondeArea(registro['Área de resultado'], area))
     .filter((registro) => tipo === 'Todos' || texto(registro.Tipo) === tipo)
@@ -661,8 +693,6 @@ function App() {
     .sort((a, b) => numero(b['Score final (0–100)']) - numero(a['Score final (0–100)'])),
     [ranking, area, tipo, origem, busca],
   )
-
-  const top10 = filtrados.slice(0, 10)
 
   const rankingOrdenado = useMemo(
     () => [...filtrados].sort((a, b) =>
@@ -720,11 +750,6 @@ function App() {
 
   const totalPrioridadeAltaFinal = useMemo(
     () => consolidadoFiltrado.filter((registro) => ePrioridadeAlta(registro.Prioridade)).length,
-    [consolidadoFiltrado],
-  )
-
-  const totalComValidacaoFinal = useMemo(
-    () => consolidadoFiltrado.filter((registro) => requerValidacao(registro.Prioridade)).length,
     [consolidadoFiltrado],
   )
 
@@ -806,8 +831,8 @@ function App() {
     },
     yAxis: {
       type: 'category',
-      data: dadosArea.map((chave) => configArea(chave).nome),
-      axisLabel: { width: 190, overflow: 'break', lineHeight: 15 },
+      data: dadosArea.map((chave) => quebraNomeAreaParaGrafico(configArea(chave).nome)),
+      axisLabel: { width: 210, overflow: 'break', lineHeight: 15 },
     },
     series: [{
       type: 'bar',
@@ -837,6 +862,34 @@ function App() {
       radius: ['52%', '76%'],
       label: { formatter: '{b}: {c}' },
       data: Object.entries(porTipo).map(([name, value]) => ({ name, value })),
+    }],
+  }
+
+  const graficoCoberturaInstitucional: EChartsOption = {
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+    grid: { left: 12, right: 30, top: 18, bottom: 36, containLabel: true },
+    xAxis: {
+      type: 'value',
+      name: 'Número de contribuições',
+      nameLocation: 'middle',
+      nameGap: 28,
+      minInterval: 1,
+    },
+    yAxis: {
+      type: 'category',
+      data: coberturaPorOrigem.map(([origem]) => origem),
+      axisLabel: { width: 112, overflow: 'truncate' },
+    },
+    series: [{
+      type: 'bar',
+      barMaxWidth: 22,
+      data: coberturaPorOrigem.map(([origem, total]) => ({
+        value: total,
+        itemStyle: {
+          color: origem === 'Escuta Técnica' ? CORES_IDENTIDADE.amarelo : CORES_IDENTIDADE.turquesa,
+          borderRadius: [0, 8, 8, 0],
+        },
+      })),
     }],
   }
 
@@ -910,24 +963,30 @@ function App() {
         minShowLabelAngle: 2,
         avoidLabelOverlap: true,
         label: {
-          formatter: '{b}\n{c}',
+          formatter: (parametro: unknown) => {
+            const { name, value } = parametro as { name?: string; value?: unknown }
+            const [nomeDaArea, tipoDoItem] = String(name ?? '').split(' · ')
+            return `${quebraNomeAreaParaGrafico(nomeDaArea)}\n${tipoDoItem ?? ''}: ${String(value ?? '')}`
+          },
           color: CORES_IDENTIDADE.cinza,
-          fontSize: 10,
+          fontSize: 9,
           fontWeight: 700,
-          lineHeight: 14,
+          lineHeight: 13,
+          width: 178,
+          overflow: 'break',
         },
         labelLine: { length: 10, length2: 8 },
         data: distribuicaoFinalPorArea.flatMap((config) => [
           ...(config.ativos > 0
             ? [{
-              name: `${config.nomeCurto} · Ativos`,
+              name: `${config.nome} · Ativos`,
               value: config.ativos,
               itemStyle: { color: config.cor },
             }]
             : []),
           ...(config.passivos > 0
             ? [{
-              name: `${config.nomeCurto} · Passivos`,
+              name: `${config.nome} · Passivos`,
               value: config.passivos,
               itemStyle: { color: corComOpacidade(config.cor, 0.48) },
             }]
@@ -941,11 +1000,15 @@ function App() {
   if (!metadados) return <main className="estado"><p>Carregando dados da matriz…</p></main>
 
   const dataGeracao = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium' }).format(new Date(metadados.geradoEm))
-  const registrosDaVisao = visao === 'Ranking Consolidado' ? consolidadoQualitativo : ranking
-  const seloCabecalho = visao === 'Ranking Consolidado'
+  const registrosDaVisao = visao === 'Proposta Final'
+    ? consolidadoQualitativo
+    : visao === 'Escuta Técnica'
+      ? escuta
+      : ranking
+  const seloCabecalho = visao === 'Proposta Final'
     ? consolidadoQualitativo.length
     : metadados.registros.rankingIntegrado
-  const rotuloSeloCabecalho = visao === 'Ranking Consolidado'
+  const rotuloSeloCabecalho = visao === 'Proposta Final'
     ? 'itens finais do GT'
     : 'registros integrados'
 
@@ -1017,7 +1080,7 @@ function App() {
               <strong>{config.nome}</strong>
               <span>
                 {registrosDaVisao.filter((registro) => chaveArea(registro['Área de resultado']) === config.chave).length}
-                {' '}{visao === 'Ranking Consolidado' ? 'itens finais' : 'registros'}
+                {' '}{visao === 'Proposta Final' ? 'itens finais' : visao === 'Escuta Técnica' ? 'evidências' : 'registros'}
               </span>
             </button>
           )
@@ -1059,31 +1122,104 @@ function App() {
         </label>
       </section>
 
-      {visao === 'Resumo' && <>
+      {visao === 'Síntese' && <>
         <section className="titulo-secao">
           <div>
-            <span className="etiqueta">VISÃO GERAL</span>
-            <h2>Panorama do recorte selecionado</h2>
+            <span className="etiqueta">SÍNTESE DO PROCESSO</span>
+            <h2>Metodologia em sete fases</h2>
           </div>
-          <p>Leitura sintética da composição da base e das prioridades mais bem posicionadas.</p>
+          <p>Etapas que transformaram documentos institucionais e escuta técnica em uma proposta final rastreável.</p>
+        </section>
+
+        <section className="fases-metodologia">
+          {ETAPAS_METODOLOGIA.map(([numeroDaFase, tituloDaFase, descricaoDaFase]) => (
+            <article className="fase-metodologia" key={numeroDaFase}>
+              <span>{numeroDaFase}</span>
+              <div>
+                <strong>{tituloDaFase}</strong>
+                <p>{descricaoDaFase}</p>
+              </div>
+            </article>
+          ))}
+        </section>
+
+        <section className="titulo-secao">
+          <div>
+            <span className="etiqueta">RANKING INTEGRADO</span>
+            <h2>Critérios do Ranking Integrado e classificação das contribuições</h2>
+          </div>
+          <p>Os critérios ponderados qualificam o conjunto de ativos, passivos e propostas antes da consolidação técnica.</p>
+        </section>
+
+        <section className="pesos">
+          <article style={{ borderTopColor: CORES_IDENTIDADE.vermelho }}>
+            <strong>40%</strong>
+            <span>Adesão aos desafios e maturidade de monitoramento</span>
+          </article>
+          <article style={{ borderTopColor: CORES_IDENTIDADE.turquesa }}>
+            <strong>25%</strong>
+            <span>Votação e contribuição da escuta</span>
+          </article>
+          <article style={{ borderTopColor: CORES_IDENTIDADE.amarelo }}>
+            <strong>20%</strong>
+            <span>Qualidade das informações e das evidências enviadas</span>
+          </article>
+          <article style={{ borderTopColor: CORES_IDENTIDADE.laranja }}>
+            <strong>15%</strong>
+            <span>Factibilidade fiscal orientativa a partir das referências da SEFAZ</span>
+          </article>
+        </section>
+
+        <section className="classificacoes">
+          <article className="classificacao classificacao--ativo">
+            <span>Ativos estratégicos</span>
+            <p>Recursos naturais ou competências duradouras com capacidade de contribuir para o desenvolvimento sustentável do Maranhão.</p>
+          </article>
+          <article className="classificacao classificacao--passivo">
+            <span>Passivos e fragilidades</span>
+            <p>Gargalos, riscos e desafios estruturais que exigem enfrentamento para não comprometer o futuro do estado.</p>
+          </article>
+          <article className="classificacao classificacao--proposta">
+            <span>Propostas</span>
+            <p>Temas, ideias, projetos, diretrizes ou iniciativas apresentadas pelas entidades para ampliar resultados e superar desafios.</p>
+          </article>
+        </section>
+
+        <section className="cartao cartao--grafico-classificacao">
+          <div className="cartao-titulo">
+            <span className="barra-titulo barra-titulo--vermelho" />
+            <div>
+              <h2>Gráfico 1 – Classificação das contribuições do Ranking Integrado</h2>
+              <p>Participação de ativos, passivos e propostas no recorte selecionado.</p>
+            </div>
+          </div>
+          <ReactECharts option={graficoTipo} style={{ height: 340 }} />
+        </section>
+
+        <section className="titulo-secao">
+          <div>
+            <span className="etiqueta">COBERTURA INSTITUCIONAL</span>
+            <h2>Cobertura das contribuições institucionais</h2>
+          </div>
+          <p>Amplitude das fontes que formaram o Ranking Integrado e a escuta que complementou a leitura técnica.</p>
         </section>
 
         <section className="cards">
           <article className="card-kpi card-kpi--vermelho">
-            <span>Registros no recorte</span>
-            <strong>{filtrados.length}</strong>
+            <span>Contribuições integradas</span>
+            <strong>{ranking.length}</strong>
           </article>
           <article className="card-kpi card-kpi--turquesa">
-            <span>Ativos</span>
-            <strong>{filtrados.filter((r) => texto(r.Tipo) === 'Ativo').length}</strong>
-          </article>
-          <article className="card-kpi card-kpi--laranja">
-            <span>Passivos</span>
-            <strong>{filtrados.filter((r) => texto(r.Tipo) === 'Passivo').length}</strong>
+            <span>Instituições com documentos</span>
+            <strong>{entidadesInstitucionais.length}</strong>
           </article>
           <article className="card-kpi card-kpi--amarelo">
-            <span>Propostas</span>
-            <strong>{filtrados.filter((r) => texto(r.Tipo) === 'Proposta').length}</strong>
+            <span>Registros da escuta técnica</span>
+            <strong>{escuta.length}</strong>
+          </article>
+          <article className="card-kpi card-kpi--laranja">
+            <span>Áreas de resultado</span>
+            <strong>{AREAS.length}</strong>
           </article>
         </section>
 
@@ -1092,44 +1228,84 @@ function App() {
             <div className="cartao-titulo">
               <span className="barra-titulo barra-titulo--turquesa" />
               <div>
-                <h2>Gráfico 1 – Registros por Área de Resultado</h2>
-                <p>Distribuição do recorte atual entre as cinco áreas estratégicas.</p>
+                <h2>Gráfico 2 – Cobertura das contribuições por origem</h2>
+                <p>Quantidade de registros institucionalizados e de evidências da escuta técnica.</p>
               </div>
             </div>
-            <ReactECharts option={graficoArea} style={{ height: 340 }} />
+            <ReactECharts option={graficoCoberturaInstitucional} style={{ height: 430 }} />
           </article>
 
           <article className="cartao">
             <div className="cartao-titulo">
               <span className="barra-titulo barra-titulo--vermelho" />
               <div>
-                <h2>Gráfico 2 – Composição do recorte</h2>
-                <p>Participação de ativos, passivos e propostas na seleção atual.</p>
+                <h2>Gráfico 3 – Contribuições por Área de Resultado</h2>
+                <p>Distribuição do recorte selecionado entre as cinco áreas estratégicas.</p>
               </div>
             </div>
-            <ReactECharts option={graficoTipo} style={{ height: 340 }} />
+            <ReactECharts option={graficoArea} style={{ height: 430 }} />
           </article>
         </section>
 
-        <section className="cartao">
-          <div className="cartao-titulo">
-            <span className="barra-titulo barra-titulo--amarelo" />
-            <div>
-              <h2>Top 10 prioridades do recorte</h2>
-              <p>Dez registros com maior score final após a aplicação dos filtros.</p>
-            </div>
+        <section className="titulo-secao">
+          <div>
+            <span className="etiqueta">CONSTRUÇÃO COLETIVA</span>
+            <h2>Quem contribuiu e como a proposta foi construída</h2>
           </div>
-          <TabelaRanking registros={top10} />
+          <p>Documentos institucionais, escuta técnica e análise do GT foram integrados em uma trilha única de decisão.</p>
+        </section>
+
+        <section className="grade-construcao-proposta">
+          <article className="cartao">
+            <div className="cartao-titulo">
+              <span className="barra-titulo barra-titulo--turquesa" />
+              <div>
+                <h2>Instituições que contribuíram</h2>
+                <p>{entidadesInstitucionais.length} instituições encaminharam documentos para análise, complementadas pela Escuta Técnica.</p>
+              </div>
+            </div>
+            <div className="lista-entidades">
+              {entidadesInstitucionais.map(([entidade, total]) => (
+                <span key={entidade}>{entidade}<b>{total}</b></span>
+              ))}
+              <span className="lista-entidades__escuta">Escuta Técnica<b>{escuta.length}</b></span>
+            </div>
+          </article>
+
+          <article className="cartao">
+            <div className="cartao-titulo">
+              <span className="barra-titulo barra-titulo--amarelo" />
+              <div>
+                <h2>Da evidência à Proposta Final</h2>
+                <p>A consolidação preserva a rastreabilidade de cada item e a contribuição que lhe deu suporte.</p>
+              </div>
+            </div>
+            <ol className="trilha-proposta">
+              <li>Documentos e evidências foram organizados por órgão e Área de Resultado.</li>
+              <li>Ativos, passivos e propostas foram vinculados aos desafios e indicadores do Plano.</li>
+              <li>A escuta técnica, a qualidade das evidências e a factibilidade orientaram a requalificação no GT.</li>
+              <li>A Proposta Final reuniu os itens validados com vínculo expansível para suas evidências.</li>
+            </ol>
+          </article>
         </section>
       </>}
 
-      {visao === 'Ranking' && (
-        <section className="cartao">
+      {visao === 'Ranking Consolidado' && (
+        <>
+          <section className="titulo-secao">
+            <div>
+              <span className="etiqueta">BASE INTEGRADA</span>
+              <h2>Itens consolidados</h2>
+            </div>
+            <p>As {ranking.length} contribuições, ativos, passivos e propostas que compõem a base completa do processo.</p>
+          </section>
+
+          <section className="cartao">
           <div className="cartao-titulo">
             <span className="barra-titulo barra-titulo--vermelho" />
             <div>
-              <h2>Ranking integrado</h2>
-              <p>Ordenado pelo score final. Use os filtros para comparar áreas, tipos e entidades.</p>
+              <h2>Lista completa de contribuições consolidadas</h2>
+              <p>Ordenada pelo score final. Use os filtros para comparar áreas, tipos e entidades.</p>
             </div>
           </div>
 
@@ -1223,9 +1399,11 @@ function App() {
             </div>
           </div>
         </section>
+
+        </>
       )}
 
-      {visao === 'Ranking Consolidado' && (
+      {visao === 'Proposta Final' && (
         <>
           <section className="titulo-secao">
             <div>
@@ -1236,6 +1414,26 @@ function App() {
               Síntese técnica requalificada no Grupo de Trabalho com a Superintendente,
               integrando evidências institucionais, critérios de viabilidade e escuta técnica.
             </p>
+          </section>
+
+          <section className="cartao cartao--lista-final">
+            <div className="cartao-titulo">
+              <span className="barra-titulo barra-titulo--turquesa" />
+              <div>
+                <h2>Lista final validada no GT</h2>
+                <p>
+                  {consolidadoFiltrado.length} itens, sendo {ativosConsolidados.length} ativos e {passivosConsolidados.length} passivos.
+                  {' '}Todos os itens anteriormente identificados como “a validar” foram considerados validados para fins de apresentação da prioridade.
+                  {' '}Use “Ver convergência de evidências” para consultar as contribuições integradas que robustecem cada item.
+                </p>
+              </div>
+            </div>
+            <TabelaRanking
+              registros={consolidadoFiltrado}
+              rotuloScore="Score-base"
+              mostrarConvergenciaDeEvidencias
+              normalizarPrioridade
+            />
           </section>
 
           <section className="cards cards--sintese-final">
@@ -1266,12 +1464,12 @@ function App() {
               <div className="cartao-titulo">
                 <span className="barra-titulo barra-titulo--turquesa" />
                 <div>
-                  <h2>Gráfico 3 – Composição final por área e tipo</h2>
+                  <h2>Gráfico 4 – Composição final por área e tipo</h2>
                   <p>Anel interno: ativos e passivos. Anel externo: distribuição quantitativa nas áreas de resultado.</p>
                 </div>
               </div>
               {consolidadoFiltrado.length > 0
-                ? <ReactECharts option={graficoComposicaoFinal} style={{ height: 390 }} />
+                ? <ReactECharts option={graficoComposicaoFinal} style={{ height: 470 }} />
                 : <p className="escuta-sem-registros">Nenhum item final corresponde aos filtros atuais.</p>}
             </article>
 
@@ -1295,8 +1493,8 @@ function App() {
                 {recorteSociedadeFinal && (
                   <p className="leitura-final">
                     <strong>Foco de superação.</strong>{' '}
-                    Sociedade Saudável, Segura e Justa concentra {recorteSociedadeFinal.passivos} passivos e nenhum ativo no recorte final,
-                    sinalizando prioridade para enfrentamento de fragilidades sociais estruturais.
+                    {recorteSociedadeFinal.nome} concentra {recorteSociedadeFinal.passivos} passivo(s) e {recorteSociedadeFinal.ativos} ativo(s),
+                    sinalizando uma agenda prioritária de enfrentamento de fragilidades sociais estruturais.
                   </p>
                 )}
                 <p className="leitura-final">
@@ -1305,9 +1503,9 @@ function App() {
                   o score-base médio do conjunto é {scoreMedioFinal.toFixed(1)}.
                 </p>
                 <p className="leitura-final">
-                  <strong>Agenda de validação.</strong>{' '}
-                  {totalComValidacaoFinal} item(ns) mantêm a indicação “validar” na prioridade,
-                  devendo ser tratados como pontos de checagem na pactuação de responsáveis, metas e recursos.
+                  <strong>Status de prioridade.</strong>{' '}
+                  Os itens originalmente marcados como “a validar” foram incorporados como validados na leitura final;
+                  a priorização exibida orienta a pactuação posterior de metas, responsáveis e recursos.
                 </p>
               </div>
             </article>
@@ -1349,119 +1547,101 @@ function App() {
             <MapaDestaques tipo="Passivo" registros={passivosConsolidados} />
           </section>
 
-          <section className="cartao">
-            <div className="cartao-titulo">
-              <span className="barra-titulo barra-titulo--turquesa" />
-              <div>
-                <h2>Lista final validada no GT</h2>
-                <p>
-                  {consolidadoFiltrado.length} itens, sendo {ativosConsolidados.length} ativos e {passivosConsolidados.length} passivos.
-                  {' '}Use “Ver convergência de evidências” para consultar as contribuições integradas que robustecem cada item.
-                </p>
-              </div>
-            </div>
-            <TabelaRanking
-              registros={consolidadoFiltrado}
-              rotuloScore="Score-base"
-              mostrarConvergenciaDeEvidencias
-              numeracaoSequencial
-            />
-          </section>
-
           <aside className="aviso">
             <strong>Leitura metodológica.</strong> A lista final registra a requalificação técnica do GT. Os vínculos, as evidências e os condicionamentos permanecem acessíveis por item; o score-base é uma referência de priorização e não substitui a pactuação posterior de metas, responsáveis e recursos.
           </aside>
 
-          <details className="evidencia-escuta">
-            <summary>
-              <span>
-                <strong>Base técnica da escuta</strong>
-                <small>Gráficos, eleições e itens priorizados pelas Câmaras Técnicas que subsidiaram a consolidação final.</small>
-              </span>
-              <b aria-hidden="true">⌄</b>
-            </summary>
-
-            <div className="evidencia-escuta__conteudo">
-              <section className="cards cards--escuta">
-                <article className="card-kpi card-kpi--turquesa">
-                  <span>Participantes válidos</span>
-                  <strong>{participantesEscuta}</strong>
-                </article>
-                <article className="card-kpi card-kpi--amarelo">
-                  <span>Ativos priorizados</span>
-                  <strong>{ativosPriorizadosEscuta.length}</strong>
-                </article>
-                <article className="card-kpi card-kpi--vermelho">
-                  <span>Passivos priorizados</span>
-                  <strong>{passivosPriorizadosEscuta.length}</strong>
-                </article>
-                <article className="card-kpi card-kpi--laranja">
-                  <span>Itens com eleição</span>
-                  <strong>{totalPriorizadosEscuta}</strong>
-                </article>
-              </section>
-
-              <section className="grade-graficos">
-                <article className="cartao">
-                  <div className="cartao-titulo">
-                    <span className="barra-titulo barra-titulo--turquesa" />
-                    <div>
-                      <h2>Gráfico 4 – Ativos mais priorizados na escuta técnica</h2>
-                      <p>Quantidade de participantes que elegeram cada ativo entre as prioridades.</p>
-                    </div>
-                  </div>
-                  {ativosPriorizadosEscuta.length > 0
-                    ? <ReactECharts option={graficoAtivosEscuta} style={{ height: 390 }} />
-                    : <p className="escuta-sem-registros">Nenhum ativo priorizado no recorte atual.</p>}
-                </article>
-
-                <article className="cartao">
-                  <div className="cartao-titulo">
-                    <span className="barra-titulo barra-titulo--vermelho" />
-                    <div>
-                      <h2>Gráfico 5 – Passivos mais priorizados na escuta técnica</h2>
-                      <p>Quantidade de participantes que elegeram cada passivo entre as prioridades.</p>
-                    </div>
-                  </div>
-                  {passivosPriorizadosEscuta.length > 0
-                    ? <ReactECharts option={graficoPassivosEscuta} style={{ height: 390 }} />
-                    : <p className="escuta-sem-registros">Nenhum passivo priorizado no recorte atual.</p>}
-                </article>
-              </section>
-
-              <section className="cartao">
-                <div className="cartao-titulo">
-                  <span className="barra-titulo barra-titulo--turquesa" />
-                  <div>
-                    <h2>Ativos eleitos como prioritários</h2>
-                    <p>Ordenação por número de eleições; os detalhes mantêm a evidência e a vinculação ao Plano.</p>
-                  </div>
-                </div>
-                <TabelaEscuta registros={ativosPriorizadosEscuta} tipo="Ativo" />
-              </section>
-
-              <section className="cartao">
-                <div className="cartao-titulo">
-                  <span className="barra-titulo barra-titulo--vermelho" />
-                  <div>
-                    <h2>Passivos eleitos como prioritários</h2>
-                    <p>Ordenação por número de eleições; gravidade e urgência apoiam a leitura da prioridade.</p>
-                  </div>
-                </div>
-                <TabelaEscuta registros={passivosPriorizadosEscuta} tipo="Passivo" />
-              </section>
-            </div>
-          </details>
         </>
       )}
 
-      {visao === 'Lacunas' && (
+      {visao === 'Escuta Técnica' && (
+        <>
+          <section className="titulo-secao">
+            <div>
+              <span className="etiqueta">CÂMARAS TÉCNICAS</span>
+              <h2>Escuta técnica: prioridades e evidências</h2>
+            </div>
+            <p>Gráficos, eleições e itens priorizados pelas Câmaras Técnicas que subsidiaram a consolidação final.</p>
+          </section>
+
+          <section className="cards cards--escuta">
+            <article className="card-kpi card-kpi--turquesa">
+              <span>Participantes válidos</span>
+              <strong>{participantesEscuta}</strong>
+            </article>
+            <article className="card-kpi card-kpi--amarelo">
+              <span>Ativos priorizados</span>
+              <strong>{ativosPriorizadosEscuta.length}</strong>
+            </article>
+            <article className="card-kpi card-kpi--vermelho">
+              <span>Passivos priorizados</span>
+              <strong>{passivosPriorizadosEscuta.length}</strong>
+            </article>
+            <article className="card-kpi card-kpi--laranja">
+              <span>Itens com eleição</span>
+              <strong>{totalPriorizadosEscuta}</strong>
+            </article>
+          </section>
+
+          <section className="grade-graficos">
+            <article className="cartao">
+              <div className="cartao-titulo">
+                <span className="barra-titulo barra-titulo--turquesa" />
+                <div>
+                  <h2>Gráfico 5 – Ativos mais priorizados na escuta técnica</h2>
+                  <p>Quantidade de participantes que elegeram cada ativo entre as prioridades.</p>
+                </div>
+              </div>
+              {ativosPriorizadosEscuta.length > 0
+                ? <ReactECharts option={graficoAtivosEscuta} style={{ height: 390 }} />
+                : <p className="escuta-sem-registros">Nenhum ativo priorizado no recorte atual.</p>}
+            </article>
+
+            <article className="cartao">
+              <div className="cartao-titulo">
+                <span className="barra-titulo barra-titulo--vermelho" />
+                <div>
+                  <h2>Gráfico 6 – Passivos mais priorizados na escuta técnica</h2>
+                  <p>Quantidade de participantes que elegeram cada passivo entre as prioridades.</p>
+                </div>
+              </div>
+              {passivosPriorizadosEscuta.length > 0
+                ? <ReactECharts option={graficoPassivosEscuta} style={{ height: 390 }} />
+                : <p className="escuta-sem-registros">Nenhum passivo priorizado no recorte atual.</p>}
+            </article>
+          </section>
+
+          <section className="cartao">
+            <div className="cartao-titulo">
+              <span className="barra-titulo barra-titulo--turquesa" />
+              <div>
+                <h2>Ativos eleitos como prioritários</h2>
+                <p>Ordenação por número de eleições; os detalhes mantêm a evidência e a vinculação ao Plano.</p>
+              </div>
+            </div>
+            <TabelaEscuta registros={ativosPriorizadosEscuta} tipo="Ativo" />
+          </section>
+
+          <section className="cartao">
+            <div className="cartao-titulo">
+              <span className="barra-titulo barra-titulo--vermelho" />
+              <div>
+                <h2>Passivos eleitos como prioritários</h2>
+                <p>Ordenação por número de eleições; gravidade e urgência apoiam a leitura da prioridade.</p>
+              </div>
+            </div>
+            <TabelaEscuta registros={passivosPriorizadosEscuta} tipo="Passivo" />
+          </section>
+        </>
+      )}
+
+      {visao === 'Referências do Plano' && (
         <section className="cartao">
           <div className="cartao-titulo">
             <span className="barra-titulo barra-titulo--laranja" />
             <div>
-              <h2>Sistemas de referência para lacunas</h2>
-              <p>Referências de monitoramento e benchmark associadas ao processo de revisão.</p>
+              <h2>Referências do Plano para lacunas e monitoramento</h2>
+              <p>Sistemas de referência, benchmarks e aplicações que apoiam a agenda de monitoramento do Maranhão 2050.</p>
             </div>
           </div>
 
@@ -1489,43 +1669,6 @@ function App() {
               </tbody>
             </table>
           </div>
-        </section>
-      )}
-
-      {visao === 'Método' && (
-        <section className="cartao">
-          <div className="cartao-titulo">
-            <span className="barra-titulo barra-titulo--amarelo" />
-            <div>
-              <h2>Como o ranking é calculado</h2>
-              <p>Composição dos quatro componentes que formam o score integrado.</p>
-            </div>
-          </div>
-
-          <div className="pesos">
-            <article style={{ borderTopColor: CORES_IDENTIDADE.vermelho }}>
-              <strong>40%</strong>
-              <span>Adesão aos desafios e maturidade de monitoramento</span>
-            </article>
-            <article style={{ borderTopColor: CORES_IDENTIDADE.turquesa }}>
-              <strong>25%</strong>
-              <span>Votação e contribuição da escuta</span>
-            </article>
-            <article style={{ borderTopColor: CORES_IDENTIDADE.amarelo }}>
-              <strong>20%</strong>
-              <span>Qualidade das informações</span>
-            </article>
-            <article style={{ borderTopColor: CORES_IDENTIDADE.laranja }}>
-              <strong>15%</strong>
-              <span>Factibilidade fiscal orientativa</span>
-            </article>
-          </div>
-
-          <aside className="aviso">
-            <strong>Leitura necessária.</strong>{' '}
-            {metadados.metodologia?.nota
-              ?? 'A referência da SEFAZ orienta a leitura fiscal por área. Não substitui orçamento, EVTEA ou análise setorial.'}
-          </aside>
         </section>
       )}
 

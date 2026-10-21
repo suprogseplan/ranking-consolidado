@@ -1,12 +1,13 @@
 {
   "titulo": "Painel Maranhão 2050 — Contribuições, Prioridades e Lacunas",
-  "geradoEm": "2026-10-19T18:01:04.237Z",
-  "fonte": "Matriz_contribuicoes_entidades_Plano_Maranhao_2050_atualizada (3).xlsx",
+  "geradoEm": "2026-10-21T12:57:04.999668Z",
+  "fonte": "Matriz_contribuicoes_entidades_Plano_Maranhao_2050_pos_GT_passivos_desmembrados.xlsx",
   "registros": {
     "rankingIntegrado": 211,
     "escutaTecnica": 37,
     "sistemasDeReferencia": 25,
-    "evidenciasSefaz": 6
+    "evidenciasSefaz": 6,
+    "rankingConsolidadoFinal": 30
   },
   "distribuicao": {
     "porTipo": {
@@ -15,17 +16,17 @@
       "Proposta": 82
     },
     "porArea": {
-      "Economia": 62,
-      "Sociedade": 29,
-      "Governança": 52,
-      "Educação, identidade e cultura": 30,
-      "Meio ambiente": 38
+      "Economia Próspera e Inclusiva": 62,
+      "Educação, Identidade e Cultura Transformadoras e Estruturantes": 30,
+      "Governança Efetiva, Conectada e Inovadora": 52,
+      "Meio Ambiente Valorizado e Resiliente": 38,
+      "Sociedade Saudável, Segura e Justa": 29
     },
     "porPrioridade": {
-      "Muito alta": 1,
       "Alta": 82,
-      "Média": 117,
-      "Em qualificação": 11
+      "Em qualificação": 11,
+      "Muito alta": 1,
+      "Média": 117
     }
   },
   "metodologia": {
@@ -34,5 +35,10 @@
     "qualidadeDaInformacao": 0.2,
     "factibilidadeFiscalOrientativa": 0.15,
     "nota": "A referência da SEFAZ orienta a leitura fiscal por área. Não substitui orçamento, EVTEA ou análise setorial."
+  },
+  "rankingConsolidadoResumo": {
+    "total": 30,
+    "ativos": 12,
+    "passivos": 18
   }
 }

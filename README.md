@@ -10,15 +10,15 @@ O Excel continua sendo a fonte oficial e auditável. O painel apenas mostra a ve
 
 ## 1. O que este pacote entrega
 
-- Exportação automática das abas `Ranking Integrado`, `Escuta Técnica`, `Lacunas Indicadores` e `SEFAZ`.
+- Exportação automática das abas `Ranking Integrado`, `Proposta Final`, `Escuta Técnica`, `Lacunas Indicadores` e `SEFAZ`.
 - Validação dos cabeçalhos da matriz antes de gerar os arquivos públicos.
-- Painel com resumo, ranking, ranking consolidado pós-GT, escuta, lacunas e metodologia.
+- Painel organizado em cinco abas: `Proposta Final`, `Síntese`, `Escuta Técnica`, `Ranking Consolidado` e `Referências do Plano`.
 - Filtros por área de resultado, tipo, origem e texto.
 - Arquivo de publicação automática para GitHub Pages.
 
 O script foi validado com a matriz que contém 211 registros no ranking integrado, 37 registros de escuta, 25 sistemas de referência de lacunas e 6 evidências SEFAZ.
 
-A aba **Ranking Consolidado**, que abre o painel, apresenta a lista final requalificada pelo Grupo de Trabalho: 30 itens, sendo 12 ativos estratégicos e 18 passivos críticos. A numeração visível é exclusiva da lista final; a posição de referência permanece disponível em cada evidência para preservar a rastreabilidade. O passivo anteriormente agregado sobre pressões urbanas, ocupação irregular e degradação de biomas foi desmembrado em dois registros: um de pressão urbana e saneamento insuficiente e outro de degradação de biomas e perda de serviços ecossistêmicos. Ela integra a leitura executiva, a distribuição por área de resultado, os destaques visuais e a base de rastreabilidade da escuta técnica.
+A aba **Proposta Final** abre o painel e apresenta, antes das análises, a lista final requalificada pelo Grupo de Trabalho: 30 itens, sendo 12 ativos estratégicos e 18 passivos críticos. Os itens anteriormente identificados como “a validar” são mostrados como validados no status de prioridade. A aba **Ranking Consolidado** preserva a base integral de 211 contribuições, abaixo do quadro de itens consolidados, e a aba **Escuta Técnica** mantém as evidências da escuta de forma expansível. A aba **Síntese** apresenta a metodologia em sete fases, os critérios e a classificação das contribuições, a cobertura institucional e a composição da proposta. O passivo anteriormente agregado sobre pressões urbanas, ocupação irregular e degradação de biomas foi desmembrado em dois registros: um de pressão urbana e saneamento insuficiente e outro de degradação de biomas e perda de serviços ecossistêmicos. Ambos preservam o score-base de 71,3 até nova revisão específica do GT.
 
 ## 2. Antes de começar
 
@@ -54,7 +54,7 @@ Se já houver um ambiente virtual funcional no projeto de indicadores, você pod
 Copie a versão validada do arquivo para a pasta abaixo, mantendo exatamente este nome:
 
 ```text
-data\origem\Matriz_contribuicoes_entidades_Plano_Maranhao_2050_atualizada (3).xlsx
+data\origem\Matriz_contribuicoes_entidades_Plano_Maranhao_2050_pos_GT_passivos_desmembrados.xlsx
 ```
 
 Esse arquivo está no `.gitignore`. Ele fica local e não entra no repositório nem no site publicado.
@@ -67,7 +67,7 @@ Ainda na raiz do projeto, execute:
 .\.venv\Scripts\python.exe scripts\exportar_matriz.py
 ```
 
-O script cria quatro arquivos em `web\public\data`:
+O script cria os arquivos públicos em `web\public\data`:
 
 ```text
 ranking-integrado.json
@@ -103,11 +103,11 @@ Abra o endereço mostrado no terminal, normalmente `http://localhost:5173/`.
 
 Verifique os seguintes itens antes de publicar:
 
-1. O total do ranking corresponde ao Excel.
+1. A aba **Proposta Final** abre o painel e contém 30 itens: 12 ativos e 18 passivos.
 2. Os filtros retornam registros coerentes.
-3. O topo do ranking, a escuta e as lacunas exibem a fonte e os vínculos corretos.
-4. A aba Método preserva os pesos: 40% adesão/maturidade, 25% escuta, 20% qualidade e 15% factibilidade fiscal orientativa.
-5. Nenhum conteúdo sensível aparece nos arquivos JSON.
+3. A aba **Ranking Consolidado** mantém as 211 contribuições que compõem a base de análise.
+4. A aba **Síntese** preserva os pesos: 40% adesão/maturidade, 25% escuta, 20% qualidade e 15% factibilidade fiscal orientativa.
+5. A escuta e as referências do plano exibem os vínculos corretos e nenhum conteúdo sensível aparece nos arquivos JSON.
 
 Para gerar a versão de produção e testar se há erro de código:
 
