@@ -1073,8 +1073,6 @@ function App() {
 
   if (erro) return <main className="estado"><h1>Painel indisponível</h1><p>{erro}</p></main>
   if (!metadados || !referenciasPlano) return <main className="estado"><p>Carregando dados da matriz…</p></main>
-
-  const dataGeracao = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium' }).format(new Date(metadados.geradoEm))
   const visaoComFiltros = visao === 'Proposta Final' || visao === 'Escuta Técnica' || visao === 'Ranking Consolidado'
   const filtrosDaVisao = visao === 'Proposta Final'
     ? filtrosProposta
