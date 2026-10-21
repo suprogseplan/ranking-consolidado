@@ -1118,10 +1118,10 @@ function App() {
             </span>
             <div>
               <p className="sobretitulo">PLANO MARANHÃO 2050</p>
-              <h1>Contribuições, prioridades e lacunas</h1>
-              <p className="subtitulo">
-                Revisão e priorização estratégica · Base atualizada em {dataGeracao}
-              </p>
+              <h1>Painel de Priorização Estratégica</h1>
+<p className="subtitulo">
+  Ativos, passivos, evidências e referências para a revisão de longo prazo do Maranhão 2050.
+</p>
             </div>
           </div>
 
