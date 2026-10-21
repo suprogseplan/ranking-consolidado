@@ -1,13 +1,15 @@
 {
   "titulo": "Painel Maranhão 2050 — Contribuições, Prioridades e Lacunas",
-  "geradoEm": "2026-10-21T12:57:04.999668Z",
+  "geradoEm": "2026-10-21T14:48:49.068723Z",
   "fonte": "Matriz_contribuicoes_entidades_Plano_Maranhao_2050_pos_GT_passivos_desmembrados.xlsx",
   "registros": {
     "rankingIntegrado": 211,
     "escutaTecnica": 37,
     "sistemasDeReferencia": 25,
     "evidenciasSefaz": 6,
-    "rankingConsolidadoFinal": 30
+    "rankingConsolidadoFinal": 30,
+    "desafiosEstrategicos": 22,
+    "indicadoresDeMonitoramento": 30
   },
   "distribuicao": {
     "porTipo": {

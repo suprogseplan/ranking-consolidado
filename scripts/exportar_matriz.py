@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from collections import Counter
 from datetime import date, datetime, timezone
 from pathlib import Path
@@ -12,13 +13,14 @@ import pandas as pd
 
 
 RAIZ = Path(__file__).resolve().parents[1]
-ARQUIVO_ORIGEM = (
+ARQUIVO_ORIGEM_PADRAO = (
     RAIZ
     / "data"
     / "origem"
     / "Matriz_contribuicoes_entidades_Plano_Maranhao_2050_pos_GT_passivos_desmembrados.xlsx"
 )
-DIRETORIO_SAIDA = RAIZ / "web" / "public" / "data"
+ARQUIVO_ORIGEM = Path(os.environ.get("MATRIZ_ORIGEM", ARQUIVO_ORIGEM_PADRAO))
+DIRETORIO_SAIDA = Path(os.environ.get("DIRETORIO_SAIDA", RAIZ / "web" / "public" / "data"))
 
 ABAS = {
     "ranking-integrado": {
@@ -209,6 +211,40 @@ def normalizar_proposta_final(registros: list[dict[str, Any]]) -> list[dict[str,
     ]
 
 
+def ler_referencias_plano() -> dict[str, Any]:
+    """Extrai as duas referências teóricas da aba ``Referência Plano``.
+
+    A aba possui dois quadros independentes: os 22 desafios estratégicos e os
+    indicadores de monitoramento utilizados na associação temática. Exportá-los
+    separadamente evita que a página de referências dependa de filtros do
+    ranking e preserva a estrutura metodológica da matriz.
+    """
+    bruto = pd.read_excel(ARQUIVO_ORIGEM, sheet_name="Referência Plano", header=None)
+
+    desafios = pd.read_excel(ARQUIVO_ORIGEM, sheet_name="Referência Plano", header=5)
+    desafios.columns = [texto(coluna) for coluna in desafios.columns]
+    desafios = desafios.loc[:, [coluna for coluna in desafios.columns if not coluna.startswith("Unnamed")]]
+    desafios = desafios[pd.to_numeric(desafios["Nº"], errors="coerce").notna()]
+
+    indicadores = pd.read_excel(ARQUIVO_ORIGEM, sheet_name="Referência Plano", header=30)
+    indicadores.columns = [texto(coluna) for coluna in indicadores.columns]
+    indicadores = indicadores.loc[:, [coluna for coluna in indicadores.columns if not coluna.startswith("Unnamed")]]
+    indicadores = indicadores[indicadores["Área de resultado"].notna()]
+
+    def registros(dados: pd.DataFrame) -> list[dict[str, Any]]:
+        return [
+            {coluna: valor_json(valor) for coluna, valor in linha.items()}
+            for _, linha in dados.dropna(how="all").iterrows()
+        ]
+
+    return {
+        "titulo": texto(bruto.iat[1, 0]),
+        "nota": texto(bruto.iat[2, 0]),
+        "desafios": registros(desafios),
+        "indicadores": registros(indicadores),
+    }
+
+
 def main() -> None:
     if not ARQUIVO_ORIGEM.exists():
         raise FileNotFoundError(f"Arquivo de origem não encontrado: {ARQUIVO_ORIGEM}")
@@ -219,10 +255,12 @@ def main() -> None:
     proposta_final = normalizar_proposta_final(
         exportacoes.pop("ranking-consolidado-ap")
     )
+    referencias_plano = ler_referencias_plano()
 
     for nome, registros in exportacoes.items():
         salvar_json(nome, registros)
     salvar_json("ranking-consolidado-ap", proposta_final)
+    salvar_json("referencias-plano", referencias_plano)
 
     ranking = exportacoes["ranking-integrado"]
     metadados = {
@@ -235,6 +273,8 @@ def main() -> None:
             "sistemasDeReferencia": len(exportacoes["lacunas-indicadores"]),
             "evidenciasSefaz": len(exportacoes["sefaz"]),
             "rankingConsolidadoFinal": len(proposta_final),
+            "desafiosEstrategicos": len(referencias_plano["desafios"]),
+            "indicadoresDeMonitoramento": len(referencias_plano["indicadores"]),
         },
         "distribuicao": {
             "porTipo": contagem(ranking, "Tipo"),

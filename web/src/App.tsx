@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react'
 import ReactECharts from 'echarts-for-react'
 import type { EChartsOption } from 'echarts'
 import './index.css'
@@ -22,6 +22,20 @@ type Metadados = {
     factibilidadeFiscalOrientativa: number
     nota: string
   }
+}
+
+type ReferenciasPlano = {
+  titulo: string
+  nota: string
+  desafios: Registro[]
+  indicadores: Registro[]
+}
+
+type FiltrosDaAba = {
+  area: string
+  tipo: string
+  origem: string
+  busca: string
 }
 
 type Visao = 'Proposta Final' | 'Síntese' | 'Escuta Técnica' | 'Ranking Consolidado' | 'Referências do Plano'
@@ -93,7 +107,7 @@ const ETAPAS_METODOLOGIA = [
   ['01', 'Mobilização institucional', 'Recebimento de documentos, diagnósticos, projetos, diretrizes e contribuições das entidades participantes.'],
   ['02', 'Leitura de evidências', 'Identificação de ativos, passivos, propostas e evidências relevantes em cada documento encaminhado.'],
   ['03', 'Classificação temática', 'Vinculação das contribuições às cinco Áreas de Resultado do Plano Maranhão 2050.'],
-  ['04', 'Vínculo com o Plano', 'Associação lógica aos desafios e indicadores estratégicos que orientam a revisão de longo prazo.'],
+  ['04', 'Vínculo com o Plano', 'Associação lógica aos desafios e indicadores estratégicos que orientam a revisão de longo prazo bem como a conexão com as lacunas encontradas no Plano Maranhão 2050.'],
   ['05', 'Escuta técnica', 'Priorização pelos membros das Câmaras Técnicas e incorporação das informações qualitativas recebidas.'],
   ['06', 'Qualificação e viabilidade', 'Análise de robustez das evidências, aderência aos desafios e factibilidade fiscal orientativa.'],
   ['07', 'Consolidação no GT', 'Requalificação da lista, validação técnica e organização da Proposta Final de ativos e passivos.'],
@@ -628,12 +642,18 @@ function App() {
   const [consolidadoQualitativo, setConsolidadoQualitativo] = useState<Registro[]>([])
   const [escuta, setEscuta] = useState<Registro[]>([])
   const [lacunas, setLacunas] = useState<Registro[]>([])
+  const [referenciasPlano, setReferenciasPlano] = useState<ReferenciasPlano | null>(null)
   const [metadados, setMetadados] = useState<Metadados | null>(null)
   const [visao, setVisao] = useState<Visao>('Proposta Final')
-  const [area, setArea] = useState('Todas')
-  const [tipo, setTipo] = useState('Todos')
-  const [origem, setOrigem] = useState('Todas')
-  const [busca, setBusca] = useState('')
+  const [filtrosProposta, setFiltrosProposta] = useState<FiltrosDaAba>({
+    area: 'Todas', tipo: 'Todos', origem: 'Todas', busca: '',
+  })
+  const [filtrosEscuta, setFiltrosEscuta] = useState<FiltrosDaAba>({
+    area: 'Todas', tipo: 'Todos', origem: 'Todas', busca: '',
+  })
+  const [filtrosRanking, setFiltrosRanking] = useState<FiltrosDaAba>({
+    area: 'Todas', tipo: 'Todos', origem: 'Todas', busca: '',
+  })
   const [erro, setErro] = useState('')
   const [paginaAtual, setPaginaAtual] = useState(1)
   const [itensPorPagina, setItensPorPagina] = useState(25)
@@ -646,33 +666,70 @@ function App() {
       carregarJson<Registro[]>('ranking-consolidado-ap.json'),
       carregarJson<Registro[]>('escuta-tecnica.json'),
       carregarJson<Registro[]>('lacunas-indicadores.json'),
+      carregarJson<ReferenciasPlano>('referencias-plano.json'),
       carregarJson<Metadados>('metadados.json'),
     ])
-      .then(([dadosRanking, dadosConsolidadoQualitativo, dadosEscuta, dadosLacunas, dadosMetadados]) => {
+      .then(([dadosRanking, dadosConsolidadoQualitativo, dadosEscuta, dadosLacunas, dadosReferenciasPlano, dadosMetadados]) => {
         setRanking(dadosRanking)
         setConsolidadoQualitativo(dadosConsolidadoQualitativo)
         setEscuta(dadosEscuta)
         setLacunas(dadosLacunas)
+        setReferenciasPlano(dadosReferenciasPlano)
         setMetadados(dadosMetadados)
       })
       .catch((causa: Error) => setErro(causa.message))
   }, [])
 
-  const areas = useMemo(
+  const areasRanking = useMemo(
     () => AREAS.filter((config) => ranking.some((registro) =>
       chaveArea(registro['Área de resultado']) === config.chave,
     )),
     [ranking],
   )
 
-  const tipos = useMemo(
+  const areasProposta = useMemo(
+    () => AREAS.filter((config) => consolidadoQualitativo.some((registro) =>
+      chaveArea(registro['Área de resultado']) === config.chave,
+    )),
+    [consolidadoQualitativo],
+  )
+
+  const areasEscuta = useMemo(
+    () => AREAS.filter((config) => escuta.some((registro) =>
+      chaveArea(registro['Área de resultado']) === config.chave,
+    )),
+    [escuta],
+  )
+
+  const tiposRanking = useMemo(
     () => Array.from(new Set(ranking.map((registro) => texto(registro.Tipo)))).filter(Boolean).sort(),
     [ranking],
   )
 
-  const origens = useMemo(
+  const tiposProposta = useMemo(
+    () => Array.from(new Set(consolidadoQualitativo.map((registro) => texto(registro.Tipo))))
+      .filter((item) => item && item !== 'Proposta')
+      .sort(),
+    [consolidadoQualitativo],
+  )
+
+  const tiposEscuta = useMemo(
+    () => Array.from(new Set(escuta.map((registro) => texto(registro.Tipo))))
+      .filter((item) => item && item !== 'Proposta')
+      .sort(),
+    [escuta],
+  )
+
+  const origensRanking = useMemo(
     () => Array.from(new Set(ranking.map((registro) => texto(registro.Origem)))).filter(Boolean).sort(),
     [ranking],
+  )
+
+  const origensProposta = useMemo(
+    () => Array.from(new Set(consolidadoQualitativo.map((registro) => texto(registro.Origem))))
+      .filter(Boolean)
+      .sort(),
+    [consolidadoQualitativo],
   )
 
   const coberturaPorOrigem = useMemo(() => Object.entries(contar(ranking, 'Origem'))
@@ -686,12 +743,12 @@ function App() {
   )
 
   const filtrados = useMemo(() => ranking
-    .filter((registro) => correspondeArea(registro['Área de resultado'], area))
-    .filter((registro) => tipo === 'Todos' || texto(registro.Tipo) === tipo)
-    .filter((registro) => origem === 'Todas' || texto(registro.Origem) === origem)
-    .filter((registro) => texto(registro['Tema, ativo ou passivo']).toLocaleLowerCase('pt-BR').includes(busca.toLocaleLowerCase('pt-BR')))
+    .filter((registro) => correspondeArea(registro['Área de resultado'], filtrosRanking.area))
+    .filter((registro) => filtrosRanking.tipo === 'Todos' || texto(registro.Tipo) === filtrosRanking.tipo)
+    .filter((registro) => filtrosRanking.origem === 'Todas' || texto(registro.Origem) === filtrosRanking.origem)
+    .filter((registro) => texto(registro['Tema, ativo ou passivo']).toLocaleLowerCase('pt-BR').includes(filtrosRanking.busca.toLocaleLowerCase('pt-BR')))
     .sort((a, b) => numero(b['Score final (0–100)']) - numero(a['Score final (0–100)'])),
-    [ranking, area, tipo, origem, busca],
+    [ranking, filtrosRanking],
   )
 
   const rankingOrdenado = useMemo(
@@ -708,20 +765,20 @@ function App() {
   const rankingPaginado = rankingOrdenado.slice(inicioPagina, fimPagina)
   const paginasRanking = paginasVisiveis(paginaAtual, totalPaginasRanking)
 
-  const porArea = filtrados.reduce<Record<string, number>>((acumulado, registro) => {
+  const porAreaSintese = ranking.reduce<Record<string, number>>((acumulado, registro) => {
     const nome = nomeArea(registro['Área de resultado'])
     acumulado[nome] = (acumulado[nome] ?? 0) + 1
     return acumulado
   }, {})
-  const porTipo = contar(filtrados, 'Tipo')
+  const porTipoSintese = contar(ranking, 'Tipo')
 
   const consolidadoFiltrado = useMemo(() => consolidadoQualitativo
-    .filter((registro) => correspondeArea(registro['Área de resultado'], area))
-    .filter((registro) => tipo === 'Todos' || texto(registro.Tipo) === tipo)
-    .filter((registro) => origem === 'Todas' || texto(registro.Origem).includes(origem))
-    .filter((registro) => normalizar(texto(registro['Tema, ativo ou passivo'])).includes(normalizar(busca)))
+    .filter((registro) => correspondeArea(registro['Área de resultado'], filtrosProposta.area))
+    .filter((registro) => filtrosProposta.tipo === 'Todos' || texto(registro.Tipo) === filtrosProposta.tipo)
+    .filter((registro) => filtrosProposta.origem === 'Todas' || texto(registro.Origem).includes(filtrosProposta.origem))
+    .filter((registro) => normalizar(texto(registro['Tema, ativo ou passivo'])).includes(normalizar(filtrosProposta.busca)))
     .sort((a, b) => numero(b['Score final (0–100)']) - numero(a['Score final (0–100)'])),
-  [consolidadoQualitativo, area, tipo, origem, busca])
+  [consolidadoQualitativo, filtrosProposta])
 
   const ativosConsolidados = useMemo(
     () => consolidadoFiltrado.filter((registro) => texto(registro.Tipo) === 'Ativo'),
@@ -772,11 +829,11 @@ function App() {
   )
 
   const escutaFiltrada = useMemo(() => escuta
-    .filter((registro) => correspondeArea(registro['Área de resultado'], area))
-    .filter((registro) => tipo === 'Todos' || texto(registro.Tipo) === tipo)
-    .filter((registro) => texto(registro['Tema, ativo ou passivo identificado']).toLocaleLowerCase('pt-BR').includes(busca.toLocaleLowerCase('pt-BR')))
+    .filter((registro) => correspondeArea(registro['Área de resultado'], filtrosEscuta.area))
+    .filter((registro) => filtrosEscuta.tipo === 'Todos' || texto(registro.Tipo) === filtrosEscuta.tipo)
+    .filter((registro) => texto(registro['Tema, ativo ou passivo identificado']).toLocaleLowerCase('pt-BR').includes(filtrosEscuta.busca.toLocaleLowerCase('pt-BR')))
     .filter((registro) => selecoesDaEscuta(registro) > 0)
-    .sort((a, b) => selecoesDaEscuta(b) - selecoesDaEscuta(a)), [escuta, area, tipo, busca])
+    .sort((a, b) => selecoesDaEscuta(b) - selecoesDaEscuta(a)), [escuta, filtrosEscuta])
 
   const ativosPriorizadosEscuta = useMemo(
     () => escutaFiltrada.filter((registro) => texto(registro.Tipo) === 'Ativo'),
@@ -793,7 +850,7 @@ function App() {
 
   useEffect(() => {
     setPaginaAtual(1)
-  }, [area, tipo, origem, busca, itensPorPagina])
+  }, [filtrosRanking, itensPorPagina])
 
   useEffect(() => {
     if (paginaAtual > totalPaginasRanking) {
@@ -813,7 +870,25 @@ function App() {
     setDirecaoOrdenacao(campo === 'Score final (0–100)' ? 'desc' : 'asc')
   }
 
-  const dadosArea = Object.keys(porArea)
+  function atualizarFiltroDaAba(campo: keyof FiltrosDaAba, valor: string) {
+    const atualizar = (definir: Dispatch<SetStateAction<FiltrosDaAba>>) => {
+      definir((filtrosAtuais) => ({ ...filtrosAtuais, [campo]: valor }))
+    }
+
+    if (visao === 'Proposta Final') {
+      atualizar(setFiltrosProposta)
+      return
+    }
+
+    if (visao === 'Escuta Técnica') {
+      atualizar(setFiltrosEscuta)
+      return
+    }
+
+    if (visao === 'Ranking Consolidado') atualizar(setFiltrosRanking)
+  }
+
+  const dadosArea = Object.keys(porAreaSintese)
     .sort((a, b) => configArea(a).ordem - configArea(b).ordem)
 
   const graficoArea: EChartsOption = {
@@ -838,7 +913,7 @@ function App() {
       type: 'bar',
       barMaxWidth: 30,
       data: dadosArea.map((chave) => ({
-        value: porArea[chave],
+        value: porAreaSintese[chave],
         itemStyle: {
           color: corArea(chave),
           borderRadius: [0, 8, 8, 0],
@@ -861,7 +936,7 @@ function App() {
       type: 'pie',
       radius: ['52%', '76%'],
       label: { formatter: '{b}: {c}' },
-      data: Object.entries(porTipo).map(([name, value]) => ({ name, value })),
+      data: Object.entries(porTipoSintese).map(([name, value]) => ({ name, value })),
     }],
   }
 
@@ -997,9 +1072,28 @@ function App() {
   }
 
   if (erro) return <main className="estado"><h1>Painel indisponível</h1><p>{erro}</p></main>
-  if (!metadados) return <main className="estado"><p>Carregando dados da matriz…</p></main>
+  if (!metadados || !referenciasPlano) return <main className="estado"><p>Carregando dados da matriz…</p></main>
 
   const dataGeracao = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium' }).format(new Date(metadados.geradoEm))
+  const visaoComFiltros = visao === 'Proposta Final' || visao === 'Escuta Técnica' || visao === 'Ranking Consolidado'
+  const filtrosDaVisao = visao === 'Proposta Final'
+    ? filtrosProposta
+    : visao === 'Escuta Técnica'
+      ? filtrosEscuta
+      : filtrosRanking
+  const areasDaVisao = visao === 'Proposta Final'
+    ? areasProposta
+    : visao === 'Escuta Técnica'
+      ? areasEscuta
+      : areasRanking
+  const tiposDaVisao = visao === 'Proposta Final'
+    ? tiposProposta
+    : visao === 'Escuta Técnica'
+      ? tiposEscuta
+      : tiposRanking
+  const origensDaVisao = visao === 'Proposta Final'
+    ? origensProposta
+    : origensRanking
   const registrosDaVisao = visao === 'Proposta Final'
     ? consolidadoQualitativo
     : visao === 'Escuta Técnica'
@@ -1064,63 +1158,65 @@ function App() {
         ))}
       </nav>
 
-      <section className="areas-resultado" aria-label="Áreas de Resultado do Plano Maranhão 2050">
-        {areas.map((config) => {
-          const selecionada = area === config.chave
-          return (
-            <button
-              type="button"
-              key={config.chave}
-              className={`area-card ${selecionada ? 'selecionada' : ''}`}
-              style={{ borderTopColor: config.cor }}
-              onClick={() => setArea(selecionada ? 'Todas' : config.chave)}
-              title={`Filtrar por ${config.nome}`}
-            >
-              <span className="area-card-cor" style={{ backgroundColor: config.cor }} />
-              <strong>{config.nome}</strong>
-              <span>
-                {registrosDaVisao.filter((registro) => chaveArea(registro['Área de resultado']) === config.chave).length}
-                {' '}{visao === 'Proposta Final' ? 'itens finais' : visao === 'Escuta Técnica' ? 'evidências' : 'registros'}
-              </span>
-            </button>
-          )
-        })}
-      </section>
+      {visaoComFiltros && <>
+        <section className="areas-resultado" aria-label={`Áreas de Resultado — ${visao}`}>
+          {areasDaVisao.map((config) => {
+            const selecionada = filtrosDaVisao.area === config.chave
+            return (
+              <button
+                type="button"
+                key={config.chave}
+                className={`area-card ${selecionada ? 'selecionada' : ''}`}
+                style={{ borderTopColor: config.cor }}
+                onClick={() => atualizarFiltroDaAba('area', selecionada ? 'Todas' : config.chave)}
+                title={`Filtrar ${visao} por ${config.nome}`}
+              >
+                <span className="area-card-cor" style={{ backgroundColor: config.cor }} />
+                <strong>{config.nome}</strong>
+                <span>
+                  {registrosDaVisao.filter((registro) => chaveArea(registro['Área de resultado']) === config.chave).length}
+                  {' '}{visao === 'Proposta Final' ? 'itens finais' : visao === 'Escuta Técnica' ? 'evidências' : 'registros'}
+                </span>
+              </button>
+            )
+          })}
+        </section>
 
-      <section className="filtros" aria-label="Filtros do ranking">
-        <label>
-          Área de Resultado
-          <select value={area} onChange={(evento) => setArea(evento.target.value)}>
-            <option value="Todas">Todas as áreas</option>
-            {areas.map((config) => <option key={config.chave} value={config.chave}>{config.nome}</option>)}
-          </select>
-        </label>
+        <section className="filtros" aria-label={`Filtros da aba ${visao}`}>
+          <label>
+            Área de Resultado
+            <select value={filtrosDaVisao.area} onChange={(evento) => atualizarFiltroDaAba('area', evento.target.value)}>
+              <option value="Todas">Todas as áreas</option>
+              {areasDaVisao.map((config) => <option key={config.chave} value={config.chave}>{config.nome}</option>)}
+            </select>
+          </label>
 
-        <label>
-          Tipo
-          <select value={tipo} onChange={(evento) => setTipo(evento.target.value)}>
-            <option value="Todos">Todos</option>
-            {tipos.map((item) => <option key={item}>{item}</option>)}
-          </select>
-        </label>
+          <label>
+            Tipo
+            <select value={filtrosDaVisao.tipo} onChange={(evento) => atualizarFiltroDaAba('tipo', evento.target.value)}>
+              <option value="Todos">Todos</option>
+              {tiposDaVisao.map((item) => <option key={item}>{item}</option>)}
+            </select>
+          </label>
 
-        <label>
-          Origem
-          <select value={origem} onChange={(evento) => setOrigem(evento.target.value)}>
-            <option value="Todas">Todas</option>
-            {origens.map((item) => <option key={item}>{item}</option>)}
-          </select>
-        </label>
+          {visao !== 'Escuta Técnica' && <label>
+            Origem
+            <select value={filtrosDaVisao.origem} onChange={(evento) => atualizarFiltroDaAba('origem', evento.target.value)}>
+              <option value="Todas">Todas</option>
+              {origensDaVisao.map((item) => <option key={item}>{item}</option>)}
+            </select>
+          </label>}
 
-        <label className="busca">
-          Buscar tema
-          <input
-            value={busca}
-            onChange={(evento) => setBusca(evento.target.value)}
-            placeholder="Ex.: logística, saúde, turismo"
-          />
-        </label>
-      </section>
+          <label className="busca">
+            Buscar tema
+            <input
+              value={filtrosDaVisao.busca}
+              onChange={(evento) => atualizarFiltroDaAba('busca', evento.target.value)}
+              placeholder="Ex.: logística, saúde, turismo"
+            />
+          </label>
+        </section>
+      </>}
 
       {visao === 'Síntese' && <>
         <section className="titulo-secao">
@@ -1635,12 +1731,90 @@ function App() {
         </>
       )}
 
-      {visao === 'Referências do Plano' && (
+      {visao === 'Referências do Plano' && <>
+        <section className="titulo-secao">
+          <div>
+            <span className="etiqueta">BASE TEÓRICA DO PLANO</span>
+            <h2>Desafios e indicadores estratégicos do Plano Maranhão 2050</h2>
+          </div>
+          <p>A referência teórica que orienta a vinculação temática, a leitura das lacunas e a revisão de longo prazo.</p>
+        </section>
+
+        <section className="cartao">
+          <div className="cartao-titulo">
+            <span className="barra-titulo barra-titulo--amarelo" />
+            <div>
+              <h2>{referenciasPlano.titulo}</h2>
+              <p>{referenciasPlano.nota}</p>
+            </div>
+          </div>
+
+          <div className="tabela-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nº</th>
+                  <th>Área de Resultado</th>
+                  <th>Desafio estratégico</th>
+                  <th>Indicador principal de apoio</th>
+                  <th>Fonte</th>
+                </tr>
+              </thead>
+              <tbody>
+                {referenciasPlano.desafios.map((registro) => (
+                  <tr key={texto(registro.Nº)}>
+                    <td>{texto(registro.Nº)}</td>
+                    <td><span className="area" style={{ backgroundColor: corArea(registro['Área de resultado']) }}>{nomeArea(registro['Área de resultado'])}</span></td>
+                    <td><strong>{texto(registro['Desafio estratégico'])}</strong></td>
+                    <td>{texto(registro['Indicador principal de apoio'])}</td>
+                    <td>{texto(registro.Fonte)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section className="cartao">
+          <div className="cartao-titulo">
+            <span className="barra-titulo barra-titulo--turquesa" />
+            <div>
+              <h2>Indicadores de monitoramento usados na vinculação temática</h2>
+              <p>Referências de acompanhamento empregadas para aproximar as contribuições dos desafios estratégicos do Plano.</p>
+            </div>
+          </div>
+
+          <div className="tabela-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Área de Resultado</th>
+                  <th>Indicador</th>
+                  <th>Último valor disponível</th>
+                  <th>Ano</th>
+                  <th>Uso na matriz</th>
+                </tr>
+              </thead>
+              <tbody>
+                {referenciasPlano.indicadores.map((registro) => (
+                  <tr key={`${texto(registro['Área de resultado'])}-${texto(registro.Indicador)}`}>
+                    <td><span className="area" style={{ backgroundColor: corArea(registro['Área de resultado']) }}>{nomeArea(registro['Área de resultado'])}</span></td>
+                    <td><strong>{texto(registro.Indicador)}</strong></td>
+                    <td>{texto(registro['Último valor disponível'])}</td>
+                    <td>{texto(registro.Ano)}</td>
+                    <td>{texto(registro['Uso na matriz'])}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
         <section className="cartao">
           <div className="cartao-titulo">
             <span className="barra-titulo barra-titulo--laranja" />
             <div>
-              <h2>Referências do Plano para lacunas e monitoramento</h2>
+              <h2>Referências complementares para lacunas e monitoramento</h2>
               <p>Sistemas de referência, benchmarks e aplicações que apoiam a agenda de monitoramento do Maranhão 2050.</p>
             </div>
           </div>
@@ -1670,7 +1844,7 @@ function App() {
             </table>
           </div>
         </section>
-      )}
+      </>}
 
       <footer className="rodape">
         <span>Plano Maranhão 2050</span>

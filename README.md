@@ -10,15 +10,15 @@ O Excel continua sendo a fonte oficial e auditável. O painel apenas mostra a ve
 
 ## 1. O que este pacote entrega
 
-- Exportação automática das abas `Ranking Integrado`, `Proposta Final`, `Escuta Técnica`, `Lacunas Indicadores` e `SEFAZ`.
+- Exportação automática das abas `Ranking Integrado`, `Proposta Final`, `Escuta Técnica`, `Lacunas Indicadores`, `Referência Plano` e `SEFAZ`.
 - Validação dos cabeçalhos da matriz antes de gerar os arquivos públicos.
 - Painel organizado em cinco abas: `Proposta Final`, `Síntese`, `Escuta Técnica`, `Ranking Consolidado` e `Referências do Plano`.
-- Filtros por área de resultado, tipo, origem e texto.
+- Filtros por área de resultado, tipo, origem e texto, com estado independente em cada aba em que são aplicáveis.
 - Arquivo de publicação automática para GitHub Pages.
 
 O script foi validado com a matriz que contém 211 registros no ranking integrado, 37 registros de escuta, 25 sistemas de referência de lacunas e 6 evidências SEFAZ.
 
-A aba **Proposta Final** abre o painel e apresenta, antes das análises, a lista final requalificada pelo Grupo de Trabalho: 30 itens, sendo 12 ativos estratégicos e 18 passivos críticos. Os itens anteriormente identificados como “a validar” são mostrados como validados no status de prioridade. A aba **Ranking Consolidado** preserva a base integral de 211 contribuições, abaixo do quadro de itens consolidados, e a aba **Escuta Técnica** mantém as evidências da escuta de forma expansível. A aba **Síntese** apresenta a metodologia em sete fases, os critérios e a classificação das contribuições, a cobertura institucional e a composição da proposta. O passivo anteriormente agregado sobre pressões urbanas, ocupação irregular e degradação de biomas foi desmembrado em dois registros: um de pressão urbana e saneamento insuficiente e outro de degradação de biomas e perda de serviços ecossistêmicos. Ambos preservam o score-base de 71,3 até nova revisão específica do GT.
+A aba **Proposta Final** abre o painel e apresenta, antes das análises, a lista final requalificada pelo Grupo de Trabalho: 30 itens, sendo 12 ativos estratégicos e 18 passivos críticos. Os itens anteriormente identificados como “a validar” são mostrados como validados no status de prioridade. Nessa lista, o ativo fiscal foi substituído por **Capacidade de pesquisa, desenvolvimento e inovação aplicada**, mantendo-se a rastreabilidade do registro fiscal na base ampla de 211 contribuições. A aba **Ranking Consolidado** preserva a base integral de 211 contribuições, abaixo do quadro de itens consolidados, e a aba **Escuta Técnica** mantém as evidências da escuta de forma expansível. A aba **Síntese** apresenta a metodologia em sete fases, os critérios e a classificação das contribuições, a cobertura institucional e a composição da proposta. A aba **Referências do Plano** apresenta os 22 desafios estratégicos e os indicadores de monitoramento que orientam a vinculação temática, sem filtros globais. O passivo anteriormente agregado sobre pressões urbanas, ocupação irregular e degradação de biomas foi desmembrado em dois registros: um de pressão urbana e saneamento insuficiente e outro de degradação de biomas e perda de serviços ecossistêmicos. Ambos preservam o score-base de 71,3 até nova revisão específica do GT.
 
 ## 2. Antes de começar
 
@@ -74,6 +74,7 @@ ranking-integrado.json
 ranking-consolidado-ap.json
 escuta-tecnica.json
 lacunas-indicadores.json
+referencias-plano.json
 sefaz.json
 metadados.json
 ```
@@ -85,6 +86,7 @@ ranking-integrado: 211 registro(s)
 escuta-tecnica: 37 registro(s)
 lacunas-indicadores: 25 registro(s)
 sefaz: 6 registro(s)
+referências do plano: 22 desafios estratégicos e 30 indicadores de monitoramento
 ```
 
 Se a estrutura de alguma aba mudar, o processo para com mensagem de erro. Corrija primeiro a matriz ou, se a alteração for deliberada, atualize a configuração `ABAS` em `scripts/exportar_matriz.py`.
@@ -104,10 +106,11 @@ Abra o endereço mostrado no terminal, normalmente `http://localhost:5173/`.
 Verifique os seguintes itens antes de publicar:
 
 1. A aba **Proposta Final** abre o painel e contém 30 itens: 12 ativos e 18 passivos.
-2. Os filtros retornam registros coerentes.
+2. Os filtros retornam registros coerentes apenas na própria aba: a Proposta Final e a Escuta Técnica exibem somente `Ativo` e `Passivo`; o Ranking Consolidado também pode exibir `Proposta`.
 3. A aba **Ranking Consolidado** mantém as 211 contribuições que compõem a base de análise.
 4. A aba **Síntese** preserva os pesos: 40% adesão/maturidade, 25% escuta, 20% qualidade e 15% factibilidade fiscal orientativa.
-5. A escuta e as referências do plano exibem os vínculos corretos e nenhum conteúdo sensível aparece nos arquivos JSON.
+5. A aba **Síntese** e a aba **Referências do Plano** não exibem filtros nem os cartões globais das áreas de resultado; a segunda mostra os desafios e indicadores teóricos da matriz.
+6. A escuta e as referências do plano exibem os vínculos corretos e nenhum conteúdo sensível aparece nos arquivos JSON.
 
 Para gerar a versão de produção e testar se há erro de código:
 
